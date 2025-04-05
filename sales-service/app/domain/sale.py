@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, UTC
 from typing import Optional
 from enum import Enum
+import re
 
 class PaymentStatus(Enum):
     PENDING = "pending"
@@ -37,9 +38,16 @@ class Sale:
     def validate(self) -> None:
         if not self.vehicle_id:
             raise ValueError("ID do veículo é obrigatório")
-        if not self.buyer_cpf or len(self.buyer_cpf) != 11:
+        
+        cpf = re.sub(r'[^\d]', '', self.buyer_cpf)
+        if len(cpf) != 11 or not cpf.isdigit():
             raise ValueError("CPF inválido")
+        
         if self.price <= 0:
             raise ValueError("Preço deve ser maior que zero")
-        if not self.payment_code:
-            raise ValueError("Código de pagamento é obrigatório") 
+        
+        if not self.payment_code or not self.payment_code.strip():
+            raise ValueError("Código de pagamento é obrigatório")
+        
+        if not isinstance(self.payment_status, PaymentStatus):
+            raise ValueError("Status de pagamento inválido") 

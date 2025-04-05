@@ -12,7 +12,11 @@ class SaleService(ABC):
         pass
 
     @abstractmethod
-    def get_sales(self) -> List[Sale]:
+    def get_sale_by_payment_code(self, payment_code: str) -> Optional[Sale]:
+        pass
+
+    @abstractmethod
+    def get_all_sales(self) -> List[Sale]:
         pass
 
     @abstractmethod
@@ -21,6 +25,14 @@ class SaleService(ABC):
 
     @abstractmethod
     def get_paid_sales(self) -> List[Sale]:
+        pass
+
+    @abstractmethod
+    def update_sale(self, sale: Sale) -> Optional[Sale]:
+        pass
+
+    @abstractmethod
+    def mark_as_paid(self, sale_id: int) -> Optional[Sale]:
         pass
 
     @abstractmethod
