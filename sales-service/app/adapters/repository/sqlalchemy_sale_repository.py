@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ...domain.sale import Sale
+from ...domain.sale import Sale, PaymentStatus
 from ...ports.sale_repository import SaleRepository
 from .models import SaleModel
 
@@ -36,17 +36,17 @@ class SQLAlchemySaleRepository(SaleRepository):
 
     def find_pending(self) -> List[Sale]:
         db_sales = self.session.query(SaleModel).filter(
-            SaleModel.payment_status == Sale.payment_status.PENDING
+            SaleModel.payment_status == PaymentStatus.PENDING
         ).all()
         return [self._to_domain(sale) for sale in db_sales]
 
     def find_paid(self) -> List[Sale]:
         db_sales = self.session.query(SaleModel).filter(
-            SaleModel.payment_status == Sale.payment_status.PAID
+            SaleModel.payment_status == PaymentStatus.PAID
         ).all()
         return [self._to_domain(sale) for sale in db_sales]
 
-    def update(self, sale: Sale) -> Sale:
+    def update(self, sale: Sale) -> Optional[Sale]:
         db_sale = self.session.query(SaleModel).filter(SaleModel.id == sale.id).first()
         if db_sale:
             for key, value in sale.__dict__.items():
