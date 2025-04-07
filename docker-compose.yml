@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  core-mongodb:
+    image: mongo:latest
+    ports:
+      - "27019:27017"
+    volumes:
+      - core-mongodb-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=core_db
+    networks:
+      - vehicle-network
+
+  sales-mongodb:
+    image: mongo:latest
+    ports:
+      - "27020:27017"
+    volumes:
+      - sales-mongodb-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=sales_db
+    networks:
+      - vehicle-network
+
+  core-service:
+    build:
+      context: ./core-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://core-mongodb:27017
+      - MONGODB_DB=core_db
+    depends_on:
+      - core-mongodb
+    networks:
+      - vehicle-network
+
+  sales-service:
+    build:
+      context: ./sales-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
+    environment:
+      - MONGODB_URL=mongodb://sales-mongodb:27017
+      - MONGODB_DB=sales_db
+      - CORE_SERVICE_URL=http://core-service:8000
+    depends_on:
+      - sales-mongodb
+      - core-service
+    networks:
+      - vehicle-network
+
+  dev-core:
+    build:
+      context: ./core-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./core-service:/app
+    environment:
+      - MONGODB_URL=mongodb://core-mongodb:27017
+      - MONGODB_DB=core_db
+    depends_on:
+      - core-mongodb
+    networks:
+      - vehicle-network
+
+  dev-sales:
+    build:
+      context: ./sales-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./sales-service:/app
+    environment:
+      - MONGODB_URL=mongodb://sales-mongodb:27017
+      - MONGODB_DB=sales_db
+      - CORE_SERVICE_URL=http://core-service:8000
+    depends_on:
+      - sales-mongodb
+      - core-service
+    networks:
+      - vehicle-network
+
+volumes:
+  core-mongodb-data:
+  sales-mongodb-data:
+
+networks:
+  vehicle-network:
+    driver: bridge
