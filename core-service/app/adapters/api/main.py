@@ -1,16 +1,17 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.adapters.api.endpoints import router
 
-from app.adapters.api.dependencies import get_db, get_vehicle_service
-from app.adapters.api.endpoints import router as vehicle_router
-from app.adapters.repository.database import Base, engine
-from app.adapters.service.vehicle_service import VehicleServiceImpl
-from app.adapters.repository.sqlalchemy_vehicle_repository import SQLAlchemyVehicleRepository
+app = FastAPI(title="Vehicle API", version="1.0.0")
 
-# Criar as tabelas do banco de dados
-Base.metadata.create_all(bind=engine)
+# Configuração do CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-app = FastAPI(title="Vehicle API")
-
-# Registrar rotas
-app.include_router(vehicle_router, prefix="/vehicles", tags=["vehicles"]) 
+# Inclui as rotas
+app.include_router(router, prefix="/vehicles", tags=["vehicles"]) 
