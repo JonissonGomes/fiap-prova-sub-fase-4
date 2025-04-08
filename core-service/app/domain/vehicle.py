@@ -1,7 +1,7 @@
+from datetime import datetime, UTC
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional
-from datetime import datetime
 
 class VehicleStatus(str, Enum):
     AVAILABLE = "DISPONÍVEL"
@@ -26,52 +26,80 @@ class VehicleUpdate(BaseModel):
     color: Optional[str] = Field(None, description="Cor do veículo")
     price: Optional[float] = Field(None, description="Preço do veículo")
 
-class Vehicle(VehicleBase):
-    id: Optional[str] = Field(None, description="ID do veículo")
-    created_at: Optional[datetime] = Field(None, description="Data de criação")
-    updated_at: Optional[datetime] = Field(None, description="Data de atualização")
+class Vehicle(BaseModel):
+    id: Optional[str] = None
+    brand: str
+    model: str
+    year: int
+    color: str
+    price: float
+    status: VehicleStatus = VehicleStatus.AVAILABLE
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
-        from_attributes = True
+    @validator('year')
+    def validate_year(cls, v):
+        if v < 1886:
+            raise ValueError("Ano inválido")
+        if v > datetime.now().year + 1:
+            raise ValueError("Ano inválido")
+        return v
 
-    def _validate(self):
-        if self.year < 1900 or self.year > datetime.now().year:
-            raise ValueError("Ano do veículo inválido")
-        
-        if self.price <= 0:
-            raise ValueError("Preço do veículo deve ser maior que zero")
-        
-        if self.status not in [status.value for status in VehicleStatus]:
-            raise ValueError("Status do veículo inválido")
+    @validator('price')
+    def validate_price(cls, v):
+        if v <= 0:
+            raise ValueError("Preço deve ser maior que zero")
+        return v
+
+    @validator('color')
+    def validate_color(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Cor é obrigatória")
+        return v.strip()
+
+    @validator('brand')
+    def validate_brand(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Marca é obrigatória")
+        return v.strip()
+
+    @validator('model')
+    def validate_model(cls, v):
+        if not v or not v.strip():
+            raise ValueError("Modelo é obrigatório")
+        return v.strip()
 
     def mark_as_sold(self):
-        if self.status == "VENDIDO":
+        if self.status == VehicleStatus.SOLD:
             raise ValueError("Veículo já está vendido")
-        if self.status != "DISPONÍVEL":
-            raise ValueError("Veículo não está disponível para venda")
-        
-        self.status = "VENDIDO"
-        self.updated_at = datetime.now()
+        self.status = VehicleStatus.SOLD
+        self.updated_at = datetime.now(UTC)
 
     def mark_as_pending(self):
-        if self.status == "RESERVADO":
+        if self.status == VehicleStatus.RESERVED:
             raise ValueError("Veículo já está reservado")
-        if self.status != "DISPONÍVEL":
-            raise ValueError("Veículo não está disponível para venda")
-        
-        self.status = "RESERVADO"
-        self.updated_at = datetime.now()
+        self.status = VehicleStatus.RESERVED
+        self.updated_at = datetime.now(UTC)
+
+    def mark_as_available(self):
+        if self.status == VehicleStatus.AVAILABLE:
+            raise ValueError("Veículo já está disponível")
+        self.status = VehicleStatus.AVAILABLE
+        self.updated_at = datetime.now(UTC)
 
     def update(self, **kwargs):
-        if self.status != "DISPONÍVEL":
-            raise ValueError("Não é possível atualizar um veículo que não está disponível")
-        
+        if 'year' in kwargs and (kwargs['year'] < 1900 or kwargs['year'] > datetime.now().year):
+            raise ValueError("Ano inválido")
+        if 'price' in kwargs and kwargs['price'] <= 0:
+            raise ValueError("Preço inválido")
+        if 'color' in kwargs and not kwargs['color']:
+            raise ValueError("Cor é obrigatória")
+        if 'brand' in kwargs and not kwargs['brand']:
+            raise ValueError("Marca é obrigatória")
+        if 'model' in kwargs and not kwargs['model']:
+            raise ValueError("Modelo é obrigatório")
+
         for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-        
-        self._validate()
-        self.updated_at = datetime.now() 
+            setattr(self, key, value)
+
+        self.updated_at = datetime.now(UTC)
