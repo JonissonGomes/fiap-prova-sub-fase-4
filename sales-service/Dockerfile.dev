@@ -17,8 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Configura o pytest e PYTHONPATH
-ENV PYTHONPATH=/app:/app/app
+ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
 # Comando padrão para execução
-CMD ["pytest", "-v"] 
+CMD ["uvicorn", "app.adapters.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"] 

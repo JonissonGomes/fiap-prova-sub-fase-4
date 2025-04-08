@@ -15,6 +15,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./core-service
+
     services:
       mongodb:
         image: mongo:latest
@@ -36,25 +40,23 @@ jobs:
         cache: 'pip'
     
     - name: Install dependencies
-      working-directory: ./core-service
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-asyncio pytest-mock
+        pip install pytest pytest-cov pytest-asyncio pytest-mock coveralls
     
     - name: Run tests with coverage
-      working-directory: ./core-service
       env:
         MONGODB_URI: mongodb://localhost:27017/vehicle_db
         PYTHONPATH: $PYTHONPATH:$(pwd)
       run: |
         pytest --cov=app --cov-report=xml -v
     
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./core-service/coverage.xml
-        fail_ci_if_error: true
+    - name: Upload coverage to Coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        coveralls --service=github
 
   build:
     needs: test

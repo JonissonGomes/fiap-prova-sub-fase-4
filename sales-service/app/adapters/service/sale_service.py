@@ -37,7 +37,7 @@ class SaleServiceImpl(SaleServicePort):
             return None
             
         if sale.payment_status == PaymentStatus.PAID:
-            raise ValueError("Venda não está com status pendente")
+            raise ValueError("Venda não está com status reservado")
             
         sale.mark_as_paid()
         return self.repository.update(sale)
