@@ -1,0 +1,126 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2024-03-20T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "req_sales_list",
+      "parentId": "fld_sales",
+      "name": "List Sales",
+      "url": "http://localhost:8001/sales",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "status",
+          "value": "pending"
+        }
+      ],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 1
+    },
+    {
+      "_id": "req_sales_create",
+      "parentId": "fld_sales",
+      "name": "Create Sale",
+      "url": "http://localhost:8001/sales",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"vehicle_id\": \"65f8a1b2c3d4e5f6a7b8c9d0\",\n  \"buyer_cpf\": \"12345678901\",\n  \"sale_date\": \"2024-03-20T12:00:00.000Z\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 2
+    },
+    {
+      "_id": "req_sales_get",
+      "parentId": "fld_sales",
+      "name": "Get Sale",
+      "url": "http://localhost:8001/sales/{{sale_id}}",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 3
+    },
+    {
+      "_id": "req_sales_webhook",
+      "parentId": "fld_sales",
+      "name": "Payment Webhook",
+      "url": "http://localhost:8001/webhook/payment",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"payment_id\": \"pay_123456789\",\n  \"status\": \"approved\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_sales_vehicles",
+      "parentId": "fld_sales",
+      "name": "List Vehicles for Sale",
+      "url": "http://localhost:8001/vehicles",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "status",
+          "value": "available"
+        },
+        {
+          "name": "sort",
+          "value": "price"
+        }
+      ],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 5
+    },
+    {
+      "_id": "req_sales_sold",
+      "parentId": "fld_sales",
+      "name": "List Sold Vehicles",
+      "url": "http://localhost:8001/vehicles/sold",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "sort",
+          "value": "price"
+        }
+      ],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 6
+    }
+  ],
+  "environments": [
+    {
+      "_id": "env_sales",
+      "name": "Sales Service",
+      "data": {
+        "base_url": "http://localhost:8001",
+        "sale_id": "65f8a1b2c3d4e5f6a7b8c9d0",
+        "payment_id": "pay_123456789"
+      }
+    }
+  ]
+} 
