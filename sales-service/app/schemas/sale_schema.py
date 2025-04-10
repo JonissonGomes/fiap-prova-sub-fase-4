@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, validator
 
 class PaymentStatus(str, Enum):
     PENDING = "PENDING"
@@ -37,7 +37,8 @@ class SaleResponse(SaleBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        orm_mode = True
 
     @classmethod
     def from_domain(cls, sale):
