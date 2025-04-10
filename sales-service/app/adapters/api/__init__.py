@@ -1,4 +1,1 @@
-"""
-API Package
-"""
-from .main import app 
+"""Módulo de adaptadores de API.""" 

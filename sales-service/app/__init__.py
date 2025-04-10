@@ -1,3 +1,1 @@
-"""
-App Package
-""" 
+"""Módulo principal do serviço de vendas.""" 

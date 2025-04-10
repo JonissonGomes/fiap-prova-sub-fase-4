@@ -1,81 +1,72 @@
-from dataclasses import dataclass
-from datetime import datetime, UTC
-from typing import Optional
-from enum import Enum
-import re
+from datetime import datetime
 from pydantic import BaseModel, Field
+from typing import Optional
+from bson import ObjectId
+from app.schemas.sale_schema import PaymentStatus
 
-class PaymentStatus(Enum):
-    PENDING = "pending"
-    PAID = "paid"
-    CANCELLED = "cancelled"
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
 
-class SaleStatus(str, Enum):
-    PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    CANCELLED = "CANCELLED"
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid ObjectId")
+        return ObjectId(v)
 
-@dataclass
-class Sale:
-    id: Optional[int] = None
-    vehicle_id: int = 0
-    buyer_cpf: str = ""
-    price: float = 0.0
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.update(type="string")
+
+class Sale(BaseModel):
+    """Modelo de domínio para uma venda."""
+    id: Optional[str] = None
+    vehicle_id: str
+    buyer_cpf: str
+    sale_price: float
+    payment_code: str
     payment_status: PaymentStatus = PaymentStatus.PENDING
-    payment_code: Optional[str] = None
-    sale_date: datetime = datetime.now(UTC)
-    created_at: datetime = datetime.now(UTC)
-    updated_at: datetime = datetime.now(UTC)
-    status: SaleStatus = SaleStatus.PENDING
-    payment_id: Optional[str] = None
-    payment_date: Optional[datetime] = None
-
-    def mark_as_paid(self) -> None:
-        if self.payment_status == PaymentStatus.PENDING:
-            self.payment_status = PaymentStatus.PAID
-            self.updated_at = datetime.now(UTC)
-        else:
-            raise ValueError("Venda não está com status reservado")
-
-    def mark_as_cancelled(self) -> None:
-        if self.payment_status == PaymentStatus.PENDING:
-            self.payment_status = PaymentStatus.CANCELLED
-            self.updated_at = datetime.now(UTC)
-        else:
-            raise ValueError("Venda não está com status reservado")
-
-    def validate(self) -> None:
-        if not self.vehicle_id:
-            raise ValueError("ID do veículo é obrigatório")
-        
-        cpf = re.sub(r'[^\d]', '', self.buyer_cpf)
-        if len(cpf) != 11 or not cpf.isdigit():
-            raise ValueError("CPF inválido")
-        
-        if self.price <= 0:
-            raise ValueError("Preço deve ser maior que zero")
-        
-        if not self.payment_code or not self.payment_code.strip():
-            raise ValueError("Código de pagamento é obrigatório")
-        
-        if not isinstance(self.payment_status, PaymentStatus):
-            raise ValueError("Status de pagamento inválido")
-
-class SaleBase(BaseModel):
-    vehicle_id: str = Field(..., description="ID do veículo vendido")
-    buyer_cpf: str = Field(..., description="CPF do comprador")
-    sale_date: datetime = Field(default_factory=datetime.now, description="Data da venda")
-    status: SaleStatus = Field(default=SaleStatus.PENDING, description="Status da venda")
-
-class SaleCreate(SaleBase):
-    pass
-
-class Sale(SaleBase):
-    id: str = Field(..., description="ID da venda")
-    created_at: datetime = Field(default_factory=datetime.now, description="Data de criação")
-    updated_at: datetime = Field(default_factory=datetime.now, description="Data de atualização")
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
+        """Configuração do modelo."""
+        arbitrary_types_allowed = True
         json_encoders = {
-            datetime: lambda v: v.isoformat()
-        } 
+            ObjectId: str
+        }
+
+    def __init__(self, **data):
+        if not data.get("created_at"):
+            data["created_at"] = datetime.now()
+        if not data.get("updated_at"):
+            data["updated_at"] = datetime.now()
+        super().__init__(**data)
+
+    def update(self, **kwargs):
+        """Atualiza os campos da venda."""
+        for key, value in kwargs.items():
+            if hasattr(self, key) and value is not None:
+                setattr(self, key, value)
+        self.updated_at = datetime.now()
+
+    def to_dict(self):
+        """Converte a venda para um dicionário."""
+        return {
+            "id": self.id,
+            "vehicle_id": self.vehicle_id,
+            "buyer_cpf": self.buyer_cpf,
+            "sale_price": self.sale_price,
+            "payment_code": self.payment_code,
+            "payment_status": self.payment_status,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """Cria uma venda a partir de um dicionário."""
+        if "_id" in data:
+            data["id"] = str(data.pop("_id"))
+        return cls(**data) 
