@@ -8,19 +8,15 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copia os arquivos de requisitos
+# Copia os arquivos de requisitos e setup
 COPY requirements.txt .
-COPY requirements-dev.txt .
+COPY setup.py .
 
-# Instala as dependências
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements-dev.txt
+# Instala o pacote em modo de desenvolvimento
+RUN pip install -e .[dev]
 
 # Copia o código fonte
 COPY . .
-
-# Instala o pacote em modo de desenvolvimento
-RUN pip install -e .
 
 # Se estiver rodando testes, use o .env.test
 ARG ENV_FILE=.env.test

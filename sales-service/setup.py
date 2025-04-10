@@ -5,11 +5,19 @@ setup(
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        "fastapi==0.68.1",
-        "uvicorn==0.15.0",
-        "motor==2.5.1",
-        "pydantic==1.8.2",
-        "python-dotenv==0.19.0",
-        "httpx==0.23.0",
+        "fastapi==0.104.1",
+        "uvicorn==0.24.0",
+        "pydantic==2.5.2",
+        "pymongo==4.6.1",
+        "motor==3.3.2",
+        "python-dotenv==1.0.0",
+        "httpx==0.25.2"
     ],
+    extras_require={
+        "dev": [
+            "pytest==7.4.3",
+            "pytest-asyncio==0.21.1",
+            "pytest-cov==4.1.0"
+        ]
+    }
 ) 
