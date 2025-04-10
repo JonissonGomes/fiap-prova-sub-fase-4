@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  sales-service:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=sales_db
+      - MONGODB_COLLECTION=sales
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=sales_db
+      - MONGODB_COLLECTION=sales
+      - PYTHONPATH=/app
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data: 
