@@ -6,20 +6,30 @@ from app.domain.sale import Sale
 from app.schemas.sale_schema import SaleCreate, SaleUpdate, PaymentStatus
 from datetime import datetime
 import os
+import asyncio
+
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for the test session."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 @pytest.fixture
-def mock_mongodb():
+async def mock_mongodb():
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-    return AsyncIOMotorClient(mongodb_url)
+    client = AsyncIOMotorClient(mongodb_url)
+    yield client
+    client.close()
 
 @pytest.fixture
-def repository(mock_mongodb):
+async def repository(mock_mongodb):
     db_name = os.getenv("MONGODB_DB_NAME", "sales_db")
     collection_name = os.getenv("MONGODB_COLLECTION", "sales")
     return MongoDBSaleRepository(mock_mongodb, db_name, collection_name)
 
 @pytest.fixture
-def service(repository):
+async def service(repository):
     return SaleServiceImpl(repository)
 
 @pytest.fixture
