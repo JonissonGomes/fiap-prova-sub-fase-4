@@ -1,20 +1,19 @@
-from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel, Field, validator
 from enum import Enum
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
 
 class PaymentStatus(str, Enum):
-    PENDING = "PENDENTE"
-    PAID = "PAGO"
-    CANCELLED = "CANCELADO"
+    PENDING = "PENDING"
+    PAID = "PAID"
+    CANCELLED = "CANCELLED"
 
 class SaleBase(BaseModel):
     """Schema base para vendas."""
-    vehicle_id: str = Field(..., description="ID do veículo")
-    buyer_cpf: str = Field(..., description="CPF do comprador")
-    sale_price: float = Field(..., gt=0, description="Preço da venda")
+    vehicle_id: str
+    buyer_cpf: str
+    sale_price: float
+    payment_code: str
     payment_status: PaymentStatus = PaymentStatus.PENDING
-    payment_code: Optional[str] = Field(None, description="Código de pagamento")
 
     @validator('buyer_cpf')
     def validate_cpf(cls, v):
@@ -34,9 +33,11 @@ class SaleUpdate(SaleBase):
 
 class SaleResponse(SaleBase):
     """Schema para resposta de venda."""
-    id: str = Field(..., description="ID da venda")
-    created_at: datetime = Field(..., description="Data de criação")
-    updated_at: Optional[datetime] = Field(None, description="Data de atualização")
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_domain(cls, sale):
