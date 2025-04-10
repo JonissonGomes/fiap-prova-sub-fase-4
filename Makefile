@@ -15,6 +15,8 @@ setup:
 up:
 	@echo "Starting development environment..."
 	docker-compose up -d
+	@echo "Showing logs..."
+	docker-compose logs -f
 
 down:
 	@echo "Stopping development environment..."
