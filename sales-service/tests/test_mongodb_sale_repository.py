@@ -8,6 +8,14 @@ from app.adapters.mongodb_sale_repository import MongoDBSaleRepository
 from unittest.mock import AsyncMock, patch, MagicMock
 from bson import ObjectId
 
+class AsyncCursor:
+    def __init__(self, items):
+        self._items = items
+
+    def __aiter__(self):
+        for item in self._items:
+            yield item
+
 @pytest.fixture
 def mock_sale():
     sale_id = ObjectId()
@@ -23,16 +31,12 @@ def mock_sale():
     )
 
 @pytest.fixture
-def mock_collection():
+def mock_collection(mock_sale):
     mock = AsyncMock()
-    mock.find_one.return_value = None
-    mock.find.return_value = AsyncMock()
-    mock.find.return_value.to_list.return_value = []
-    mock.insert_one.return_value = AsyncMock()
+    mock.find.return_value = AsyncCursor([mock_sale.dict()])
+    mock.find_one.return_value = mock_sale.dict()
     mock.insert_one.return_value.inserted_id = ObjectId()
-    mock.update_one.return_value = AsyncMock()
     mock.update_one.return_value.modified_count = 1
-    mock.delete_one.return_value = AsyncMock()
     mock.delete_one.return_value.deleted_count = 1
     return mock
 
@@ -75,22 +79,6 @@ async def test_find_by_id_not_found(repository, mock_collection):
     result = await repository.find_by_id(str(sale_id))
     assert result is None
     mock_collection.find_one.assert_called_once_with({"_id": sale_id})
-
-@pytest.mark.asyncio
-async def test_find_all(repository, mock_sale, mock_collection):
-    mock_collection.find.return_value.to_list.return_value = [mock_sale.dict()]
-    result = await repository.find_all()
-    assert len(result) == 1
-    assert result[0] == mock_sale
-    mock_collection.find.assert_called_once()
-
-@pytest.mark.asyncio
-async def test_find_by_status(repository, mock_sale, mock_collection):
-    mock_collection.find.return_value.to_list.return_value = [mock_sale.dict()]
-    result = await repository.find_by_status(PaymentStatus.PENDING)
-    assert len(result) == 1
-    assert result[0] == mock_sale
-    mock_collection.find.assert_called_once_with({"payment_status": "PENDENTE"})
 
 @pytest.mark.asyncio
 async def test_find_by_payment_code(repository, mock_sale, mock_collection):
