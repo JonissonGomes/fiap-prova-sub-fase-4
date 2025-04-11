@@ -73,4 +73,16 @@ class SaleServiceImpl(SaleService):
 
         sale.payment_status = status
         sale.updated_at = datetime.now()
-        return await self.repository.update(sale) 
+        return await self.repository.update(sale)
+
+    async def mark_sale_as_paid(self, sale_id: str) -> Sale:
+        """Marca uma venda como paga."""
+        return await self.update_payment_status(sale_id, PaymentStatus.PAID)
+
+    async def mark_sale_as_pending(self, sale_id: str) -> Sale:
+        """Marca uma venda como pendente."""
+        return await self.update_payment_status(sale_id, PaymentStatus.PENDING)
+
+    async def mark_sale_as_canceled(self, sale_id: str) -> Sale:
+        """Marca uma venda como cancelada."""
+        return await self.update_payment_status(sale_id, PaymentStatus.CANCELLED) 
