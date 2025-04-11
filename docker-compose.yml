@@ -3,10 +3,10 @@ services:
     build:
       context: ./core-service
       dockerfile: Dockerfile.dev
-    ports:
-      - "8000:8000"
     volumes:
       - ./core-service:/app
+    ports:
+      - "8000:8000"
     environment:
       - MONGODB_URL=mongodb://core-mongodb:27017
       - MONGODB_DB_NAME=core_db
@@ -14,37 +14,37 @@ services:
     depends_on:
       - core-mongodb
 
+  sales-service:
+    build:
+      context: ./sales-service
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./sales-service:/app
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGODB_URL=mongodb://sales-mongodb:27017
+      - MONGODB_DB_NAME=sales_db
+      - MONGODB_COLLECTION=sales
+      - CORE_SERVICE_URL=http://core-service:8000
+    depends_on:
+      - sales-mongodb
+      - core-service
+
   core-mongodb:
     image: mongo:latest
     ports:
       - "27019:27017"
     volumes:
-      - core_mongodb_data:/data/db
-
-  sales-service:
-    build:
-      context: ./sales-service
-      dockerfile: Dockerfile.dev
-    ports:
-      - "8001:8001"
-    volumes:
-      - ./sales-service:/app
-    environment:
-      - MONGODB_URL=mongodb://sales-mongodb:27017
-      - MONGODB_DB_NAME=sales_db
-      - MONGODB_COLLECTION=sales
-      - PYTHONPATH=/app
-    depends_on:
-      - sales-mongodb
-      - core-service
+      - core-mongodb-data:/data/db
 
   sales-mongodb:
     image: mongo:latest
     ports:
       - "27020:27017"
     volumes:
-      - sales_mongodb_data:/data/db
+      - sales-mongodb-data:/data/db
 
 volumes:
-  core_mongodb_data:
-  sales_mongodb_data:
+  core-mongodb-data:
+  sales-mongodb-data:

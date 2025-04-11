@@ -1,43 +1,47 @@
-.PHONY: install setup up down test test-core test-sales logs clean run stop mongodb mongodb-logs core sales core-logs sales-logs lint type-check rebuild status restart build-sales run-sales test-sales build-core run-core test-core build-all run-all test-all
-
-# Instalação e Configuração
-install:
-	@echo "Instalando dependências..."
-	pip install -r requirements.txt
+.PHONY: setup install up down test test-core test-sales logs clean run stop mongodb mongodb-logs core sales core-logs sales-logs lint type-check rebuild status restart
 
 setup:
 	@echo "Configurando ambiente..."
 	docker-compose build
 
-# Comandos básicos
+install:
+	@echo "Instalando dependências..."
+	docker-compose run --rm core-service pip install -r requirements.txt
+	docker-compose run --rm sales-service pip install -r requirements.txt
+
 up:
 	docker-compose up -d
+	docker-compose logs -f
 
 down:
 	docker-compose down
 
-test: test-core test-sales
-	@echo "Running all tests..."
+test:
+	@echo "Executando testes..."
+	docker-compose run --rm core-service pytest tests/ -v
+	docker-compose run --rm sales-service pytest tests/ -v
 
 test-core:
+	@echo "Executando testes do core-service..."
 	docker-compose run --rm core-service pytest tests/ -v
 
 test-sales:
+	@echo "Executando testes do sales-service..."
 	docker-compose run --rm sales-service pytest tests/ -v
 
 logs:
 	docker-compose logs -f
 
 clean:
+	@echo "Limpando ambiente..."
 	docker-compose down -v
 	docker system prune -f
 
-# Comandos específicos para cada serviço
 run:
 	docker-compose up
 
 stop:
-	docker-compose down
+	docker-compose stop
 
 mongodb:
 	docker-compose up -d core-mongodb sales-mongodb
@@ -57,44 +61,27 @@ core-logs:
 sales-logs:
 	docker-compose logs -f sales-service
 
-# Comandos de desenvolvimento
 lint:
-	docker-compose run --rm core-service flake8 .
-	docker-compose run --rm sales-service flake8 .
+	@echo "Executando linter..."
+	docker-compose run --rm core-service flake8 app/
+	docker-compose run --rm sales-service flake8 app/
 
 type-check:
-	docker-compose run --rm core-service mypy .
-	docker-compose run --rm sales-service mypy .
+	@echo "Verificando tipos..."
+	docker-compose run --rm core-service mypy app/
+	docker-compose run --rm sales-service mypy app/
 
 rebuild:
+	@echo "Reconstruindo containers..."
 	docker-compose down
 	docker-compose build --no-cache
 	docker-compose up -d
 
 status:
-	@echo "Checking services status..."
+	@echo "Status dos serviços:"
 	docker-compose ps
 
 restart:
+	@echo "Reiniciando serviços..."
 	docker-compose restart
-
-# Comandos para o serviço de vendas
-build-sales:
-	docker-compose build sales-service
-
-run-sales:
-	docker-compose up sales-service
-
-# Comandos para o serviço core
-build-core:
-	docker-compose build core-service
-
-run-core:
-	docker-compose up core-service
-
-# Comandos para ambos os serviços
-build-all: build-core build-sales
-
-run-all: run-core run-sales
-
-test-all: test-core test-sales 
+	docker-compose logs -f 
