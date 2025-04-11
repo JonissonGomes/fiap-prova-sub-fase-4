@@ -1,4 +1,4 @@
-.PHONY: setup install up down test test-core test-sales logs clean run stop mongodb mongodb-logs core sales core-logs sales-logs lint type-check rebuild status restart clean-sales-db clean-core-db
+.PHONY: setup install up down test test-core test-sales logs clean run stop mongodb mongodb-logs core sales core-logs sales-logs lint type-check rebuild status restart clean-sales-db clean-core-db coverage coverage-core coverage-sales coverage-report
 
 setup:
 	@echo "Configurando ambiente..."
@@ -94,4 +94,25 @@ clean-sales-db:
 clean-core-db:
 	@echo "Limpando banco de dados do core-service..."
 	docker-compose exec core-mongodb mongosh core_db --eval "db.vehicles.deleteMany({})"
-	@echo "Banco de dados limpo com sucesso!" 
+	@echo "Banco de dados limpo com sucesso!"
+
+coverage:
+	@echo "Executando cobertura de testes para todos os serviços..."
+	docker-compose run --rm core-service pytest tests/ --cov=app --cov-report=term-missing
+	docker-compose run --rm sales-service pytest tests/ --cov=app --cov-report=term-missing
+
+coverage-core:
+	@echo "Executando cobertura de testes do core-service..."
+	docker-compose run --rm core-service pytest tests/ --cov=app --cov-report=term-missing
+
+coverage-sales:
+	@echo "Executando cobertura de testes do sales-service..."
+	docker-compose run --rm sales-service pytest tests/ --cov=app --cov-report=term-missing
+
+coverage-report:
+	@echo "Gerando relatório de cobertura..."
+	docker-compose run --rm core-service pytest tests/ --cov=app --cov-report=html
+	docker-compose run --rm sales-service pytest tests/ --cov=app --cov-report=html
+	@echo "Relatórios gerados em:"
+	@echo "core-service: htmlcov/index.html"
+	@echo "sales-service: htmlcov/index.html" 
