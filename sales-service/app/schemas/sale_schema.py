@@ -3,9 +3,9 @@ from datetime import datetime
 from pydantic import BaseModel, Field, validator
 
 class PaymentStatus(str, Enum):
-    PENDING = "PENDING"
-    PAID = "PAID"
-    CANCELLED = "CANCELLED"
+    PENDING = "PENDENTE"
+    PAID = "PAGO"
+    CANCELLED = "CANCELADA"
 
 class SaleBase(BaseModel):
     """Schema base para vendas."""
