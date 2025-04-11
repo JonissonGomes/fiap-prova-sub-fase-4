@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.adapters.mongodb_sale_repository import MongoDBSaleRepository
 from app.services.sale_service_impl import SaleServiceImpl
@@ -15,20 +16,20 @@ def event_loop():
     yield loop
     loop.close()
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def mock_mongodb():
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     client = AsyncIOMotorClient(mongodb_url)
     yield client
     client.close()
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def repository(mock_mongodb):
     db_name = os.getenv("MONGODB_DB_NAME", "sales_db")
     collection_name = os.getenv("MONGODB_COLLECTION", "sales")
     return MongoDBSaleRepository(mock_mongodb, db_name, collection_name)
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def service(repository):
     return SaleServiceImpl(repository)
 
@@ -80,14 +81,14 @@ def mock_sales_list():
         for i in range(5)
     ]
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def clean_database(repository):
     """Fixture para limpar o banco de dados antes e depois dos testes"""
     await repository.collection.delete_many({})
     yield
     await repository.collection.delete_many({})
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def populated_database(repository, mock_sales_list):
     """Fixture para popular o banco de dados com dados de teste"""
     for sale in mock_sales_list:

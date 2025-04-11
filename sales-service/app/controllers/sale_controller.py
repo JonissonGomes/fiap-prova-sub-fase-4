@@ -3,6 +3,7 @@ from typing import List, Optional
 import httpx
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
+from bson import ObjectId
 
 from app.services.sale_service import SaleService
 from app.adapters.mongodb_sale_repository import MongoDBSaleRepository
@@ -15,6 +16,7 @@ from app.schemas.sale_schema import (
 from app.domain.sale import Sale
 from app.infrastructure.mongodb_config import MongoDB, MongoDBSettings
 from app.services.sale_service_impl import SaleServiceImpl
+from app.exceptions import SaleNotFoundError
 
 router = APIRouter(tags=["sales"])
 
@@ -37,14 +39,20 @@ async def create_sale(
 ):
     """Cria uma nova venda."""
     try:
+        # Cria o objeto de domínio
         domain_sale = Sale(
+            id=str(ObjectId()),
             vehicle_id=sale.vehicle_id,
             buyer_cpf=sale.buyer_cpf,
             sale_price=sale.sale_price,
             payment_code=sale.payment_code,
             payment_status=sale.payment_status
         )
+        
+        # Salva a venda
         created_sale = await service.create_sale(domain_sale)
+        
+        # Converte para o schema de resposta
         return SaleResponse.from_domain(created_sale)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -52,20 +60,15 @@ async def create_sale(
         raise HTTPException(status_code=500, detail=f"Erro ao criar venda: {str(e)}")
 
 @router.get("/sales/{sale_id}", response_model=SaleResponse)
-async def get_sale(
-    sale_id: str,
-    service: SaleServiceImpl = Depends(get_service)
-):
-    """Obtém uma venda pelo ID."""
+async def get_sale(sale_id: str, service: SaleService = Depends(get_service)):
+    # Verifica se é um ObjectId válido
+    if not ObjectId.is_valid(sale_id):
+        raise HTTPException(status_code=400, detail="ID inválido")
+
     try:
-        sale = await service.get_sale(sale_id)
-        if not sale:
-            raise HTTPException(status_code=404, detail="Venda não encontrada")
-        return SaleResponse.from_domain(sale)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar venda: {str(e)}")
+        return await service.get_sale(sale_id)
+    except SaleNotFoundError:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
 
 @router.get("/sales", response_model=List[SaleResponse])
 async def get_sales(service: SaleServiceImpl = Depends(get_service)):
@@ -102,27 +105,16 @@ async def get_sale_by_payment_code(
         raise HTTPException(status_code=500, detail=f"Erro ao buscar venda: {str(e)}")
 
 @router.put("/sales/{sale_id}", response_model=SaleResponse)
-async def update_sale(
-    sale_id: str,
-    sale: SaleUpdate,
-    service: SaleServiceImpl = Depends(get_service)
-):
-    """Atualiza uma venda existente."""
-    try:
-        domain_sale = Sale(
-            id=sale_id,
-            vehicle_id=sale.vehicle_id,
-            buyer_cpf=sale.buyer_cpf,
-            sale_price=sale.sale_price,
-            payment_code=sale.payment_code,
-            payment_status=sale.payment_status
-        )
-        updated_sale = await service.update_sale(domain_sale)
-        return SaleResponse.from_domain(updated_sale)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar venda: {str(e)}")
+async def update_sale(sale_id: str, sale_update: SaleUpdate, service=Depends(get_service)):
+    if not ObjectId.is_valid(sale_id):
+        raise HTTPException(status_code=400, detail="ID inválido")
+    
+    updated_sale = await service.update_sale(Sale(id=sale_id, **sale_update.dict()))
+    
+    if not updated_sale:
+        raise HTTPException(status_code=404, detail="Venda não encontrada")
+    
+    return SaleResponse(**updated_sale.__dict__)
 
 @router.delete("/sales/{sale_id}")
 async def delete_sale(
