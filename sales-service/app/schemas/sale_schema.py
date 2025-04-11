@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
-from pydantic import BaseModel, Field, validator
+from typing import Optional
+from pydantic import BaseModel, Field, validator, constr
 
 class PaymentStatus(str, Enum):
     PENDING = "PENDENTE"
@@ -23,17 +24,27 @@ class SaleBase(BaseModel):
             raise ValueError('CPF deve conter 11 dígitos')
         return v
 
-class SaleCreate(SaleBase):
-    """Schema para criação de venda."""
-    pass
+class SaleCreate(BaseModel):
+    vehicle_id: constr(min_length=1)
+    buyer_cpf: constr(min_length=11, max_length=11)
+    sale_price: float = Field(gt=0)
+    payment_code: constr(min_length=1)
+    payment_status: PaymentStatus = PaymentStatus.PENDING
 
-class SaleUpdate(SaleBase):
-    """Schema para atualização de venda."""
-    pass
+class SaleUpdate(BaseModel):
+    vehicle_id: Optional[constr(min_length=1)] = None
+    buyer_cpf: Optional[constr(min_length=11, max_length=11)] = None
+    sale_price: Optional[float] = Field(default=None, gt=0)
+    payment_code: Optional[constr(min_length=1)] = None
+    payment_status: Optional[PaymentStatus] = None
 
-class SaleResponse(SaleBase):
-    """Schema para resposta de venda."""
+class SaleResponse(BaseModel):
     id: str
+    vehicle_id: str
+    buyer_cpf: str
+    sale_price: float
+    payment_code: str
+    payment_status: PaymentStatus
     created_at: datetime
     updated_at: datetime
 
