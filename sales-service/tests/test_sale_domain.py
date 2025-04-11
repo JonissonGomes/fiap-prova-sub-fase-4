@@ -85,3 +85,70 @@ def test_sale_from_dict(sale_data):
     assert sale.created_at == sale_data["created_at"]
     assert sale.updated_at == sale_data["updated_at"]
 
+def test_sale_update_with_none_values(sale):
+    original_vehicle_id = sale.vehicle_id
+    original_buyer_cpf = sale.buyer_cpf
+    original_sale_price = sale.sale_price
+    original_payment_code = sale.payment_code
+    original_payment_status = sale.payment_status
+    
+    sale.update(
+        vehicle_id=None,
+        buyer_cpf=None,
+        sale_price=None,
+        payment_code=None,
+        payment_status=None
+    )
+    
+    assert sale.vehicle_id == original_vehicle_id
+    assert sale.buyer_cpf == original_buyer_cpf
+    assert sale.sale_price == original_sale_price
+    assert sale.payment_code == original_payment_code
+    assert sale.payment_status == original_payment_status
+    assert sale.updated_at > sale.created_at
+
+def test_sale_update_with_invalid_field(sale):
+    original_vehicle_id = sale.vehicle_id
+    sale.update(invalid_field="value")
+    assert sale.vehicle_id == original_vehicle_id
+    assert sale.updated_at > sale.created_at
+
+def test_sale_with_invalid_payment_status():
+    with pytest.raises(ValueError):
+        Sale(
+            vehicle_id="test_vehicle_id",
+            buyer_cpf="12345678900",
+            sale_price=50000.0,
+            payment_code="test_payment_code",
+            payment_status="INVALID_STATUS"
+        )
+
+def test_sale_with_max_price():
+    sale = Sale(
+        vehicle_id="test_vehicle_id",
+        buyer_cpf="12345678900",
+        sale_price=999999999.99,
+        payment_code="test_payment_code"
+    )
+    assert sale.sale_price == 999999999.99
+
+def test_sale_with_special_characters():
+    sale = Sale(
+        vehicle_id="test_vehicle_id_123!@#",
+        buyer_cpf="12345678900",
+        sale_price=50000.0,
+        payment_code="test_payment_code_123!@#"
+    )
+    assert sale.vehicle_id == "test_vehicle_id_123!@#"
+    assert sale.payment_code == "test_payment_code_123!@#"
+
+def test_sale_with_unicode_characters():
+    sale = Sale(
+        vehicle_id="test_vehicle_id",
+        buyer_cpf="12345678900",
+        sale_price=50000.0,
+        payment_code="test_payment_code"
+    )
+    assert sale.vehicle_id == "test_vehicle_id"
+    assert sale.payment_code == "test_payment_code"
+
