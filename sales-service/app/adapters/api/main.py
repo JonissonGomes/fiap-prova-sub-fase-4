@@ -66,4 +66,4 @@ async def shutdown_event():
         logger.info("Conexão com MongoDB fechada.")
 
 # Inclui as rotas
-app.include_router(sale_router, prefix="/sales", tags=["sales"]) 
+app.include_router(sale_router, tags=["sales"]) 
