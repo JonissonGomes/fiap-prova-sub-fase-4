@@ -4,6 +4,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 import os
 import logging
+import asyncio
+from typing import Optional
 
 from app.controllers.sale_controller import router as sale_router
 from app.infrastructure.mongodb_config import MongoDB
@@ -37,14 +39,32 @@ async def health_check():
     """Endpoint para verificar a saúde do serviço."""
     return {"status": "healthy"}
 
+async def try_connect_mongodb(max_retries: int = 5, retry_delay: int = 5) -> Optional[MongoDB]:
+    """Tenta conectar ao MongoDB com retries."""
+    mongodb = MongoDB()
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Tentativa {attempt + 1} de {max_retries} de conexão com MongoDB...")
+            await mongodb.connect()
+            return mongodb
+        except Exception as e:
+            if attempt == max_retries - 1:
+                logger.error(f"Falha em todas as tentativas de conexão com MongoDB: {str(e)}")
+                raise
+            logger.warning(f"Falha na tentativa {attempt + 1}. Tentando novamente em {retry_delay} segundos...")
+            await asyncio.sleep(retry_delay)
+    return None
+
 @app.on_event("startup")
 async def startup_event():
     global repository, service
     try:
         logger.info("Iniciando o serviço...")
-        # Conecta ao MongoDB
-        mongodb = MongoDB()
-        await mongodb.connect()
+        # Conecta ao MongoDB com retry
+        mongodb = await try_connect_mongodb()
+        if not mongodb:
+            raise Exception("Não foi possível conectar ao MongoDB após todas as tentativas")
+        
         logger.info("Conectado ao MongoDB com sucesso!")
         
         # Inicializa o repositório e o serviço
