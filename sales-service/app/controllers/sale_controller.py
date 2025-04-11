@@ -141,7 +141,7 @@ async def delete_sale(
         raise HTTPException(status_code=500, detail=f"Erro ao remover venda: {str(e)}")
 
 @router.patch("/sales/{sale_id}/mark-as-canceled", response_model=SaleResponse)
-async def mark_sale_as_open(
+async def mark_sale_as_canceled(
     sale_id: str,
     service: SaleServiceImpl = Depends(get_service)
 ):
