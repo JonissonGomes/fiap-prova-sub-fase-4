@@ -1,4 +1,4 @@
-.PHONY: setup install up down test test-core test-sales logs clean run stop mongodb mongodb-logs core sales core-logs sales-logs lint type-check rebuild status restart
+.PHONY: setup install up down test test-core test-sales logs clean run stop mongodb mongodb-logs core sales core-logs sales-logs lint type-check rebuild status restart clean-sales-db clean-core-db
 
 setup:
 	@echo "Configurando ambiente..."
@@ -84,4 +84,14 @@ status:
 restart:
 	@echo "Reiniciando serviços..."
 	docker-compose restart
-	docker-compose logs -f 
+	docker-compose logs -f
+
+clean-sales-db:
+	@echo "Limpando banco de dados do sales-service..."
+	docker-compose exec sales-mongodb mongosh sales_db --eval "db.sales.deleteMany({})"
+	@echo "Banco de dados limpo com sucesso!"
+
+clean-core-db:
+	@echo "Limpando banco de dados do core-service..."
+	docker-compose exec core-mongodb mongosh core_db --eval "db.vehicles.deleteMany({})"
+	@echo "Banco de dados limpo com sucesso!" 
