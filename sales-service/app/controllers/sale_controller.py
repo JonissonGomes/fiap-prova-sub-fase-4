@@ -85,6 +85,22 @@ async def get_sales_by_status(status: PaymentStatus, service: SaleServiceImpl = 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar vendas por status: {str(e)}")
 
+@router.get("/sales/payment/{payment_code}", response_model=SaleResponse)
+async def get_sale_by_payment_code(
+    payment_code: str,
+    service: SaleServiceImpl = Depends(get_service)
+):
+    """Obtém uma venda pelo código de pagamento."""
+    try:
+        sale = await service.get_sale_by_payment_code(payment_code)
+        if not sale:
+            raise HTTPException(status_code=404, detail="Venda não encontrada")
+        return SaleResponse.from_domain(sale)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar venda: {str(e)}")
+
 @router.put("/sales/{sale_id}", response_model=SaleResponse)
 async def update_sale(
     sale_id: str,
@@ -124,15 +140,14 @@ async def delete_sale(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao remover venda: {str(e)}")
 
-@router.patch("/sales/{sale_id}/payment-status", response_model=SaleResponse)
-async def update_payment_status(
+@router.patch("/sales/{sale_id}/mark-as-canceled", response_model=SaleResponse)
+async def mark_sale_as_open(
     sale_id: str,
-    payment_status: PaymentStatus,
     service: SaleServiceImpl = Depends(get_service)
 ):
-    """Atualiza o status de pagamento de uma venda."""
+    """Marca uma venda como Em aberta."""
     try:
-        updated_sale = await service.update_payment_status(sale_id, payment_status)
+        updated_sale = await service.update_payment_status(sale_id, PaymentStatus.CANCELLED)
         if not updated_sale:
             raise HTTPException(status_code=404, detail="Venda não encontrada")
         
@@ -143,14 +158,74 @@ async def update_payment_status(
                     "http://core-service:8000/vehicles/sale-status",
                     json={
                         "vehicle_id": updated_sale.vehicle_id,
-                        "status": payment_status
+                        "status": PaymentStatus.CANCELLED
                     }
                 )
             except Exception as e:
                 print(f"Erro ao notificar o serviço principal: {e}")
         
-        return updated_sale
+        return SaleResponse.from_domain(updated_sale)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar status de pagamento: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Erro ao marcar venda como Em aberta: {str(e)}")
+
+@router.patch("/sales/{sale_id}/mark-as-pending", response_model=SaleResponse)
+async def mark_sale_as_pending(
+    sale_id: str,
+    service: SaleServiceImpl = Depends(get_service)
+):
+    """Marca uma venda como Pendente."""
+    try:
+        updated_sale = await service.update_payment_status(sale_id, PaymentStatus.PENDING)
+        if not updated_sale:
+            raise HTTPException(status_code=404, detail="Venda não encontrada")
+        
+        # Notifica o serviço principal sobre a mudança de status
+        async with httpx.AsyncClient() as client:
+            try:
+                await client.post(
+                    "http://core-service:8000/vehicles/sale-status",
+                    json={
+                        "vehicle_id": updated_sale.vehicle_id,
+                        "status": PaymentStatus.PENDING
+                    }
+                )
+            except Exception as e:
+                print(f"Erro ao notificar o serviço principal: {e}")
+        
+        return SaleResponse.from_domain(updated_sale)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao marcar venda como Pendente: {str(e)}")
+
+@router.patch("/sales/{sale_id}/mark-as-paid", response_model=SaleResponse)
+async def mark_sale_as_paid(
+    sale_id: str,
+    service: SaleServiceImpl = Depends(get_service)
+):
+    """Marca uma venda como Pago."""
+    try:
+        updated_sale = await service.update_payment_status(sale_id, PaymentStatus.PAID)
+        if not updated_sale:
+            raise HTTPException(status_code=404, detail="Venda não encontrada")
+        
+        # Notifica o serviço principal sobre a mudança de status
+        async with httpx.AsyncClient() as client:
+            try:
+                await client.post(
+                    "http://core-service:8000/vehicles/sale-status",
+                    json={
+                        "vehicle_id": updated_sale.vehicle_id,
+                        "status": PaymentStatus.PAID
+                    }
+                )
+            except Exception as e:
+                print(f"Erro ao notificar o serviço principal: {e}")
+        
+        return SaleResponse.from_domain(updated_sale)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao marcar venda como Pago: {str(e)}") 

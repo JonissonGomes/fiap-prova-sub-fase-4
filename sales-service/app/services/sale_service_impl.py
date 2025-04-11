@@ -32,6 +32,10 @@ class SaleServiceImpl(SaleService):
         """Obtém uma venda pelo ID do veículo."""
         return await self.repository.find_by_vehicle_id(vehicle_id)
 
+    async def get_sale_by_payment_code(self, payment_code: str) -> Optional[Sale]:
+        """Obtém uma venda pelo código de pagamento."""
+        return await self.repository.find_by_payment_code(payment_code)
+
     async def get_all_sales(self) -> List[Sale]:
         """Lista todas as vendas."""
         return await self.repository.find_all()

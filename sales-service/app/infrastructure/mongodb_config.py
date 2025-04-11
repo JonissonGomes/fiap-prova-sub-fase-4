@@ -8,9 +8,9 @@ load_dotenv()
 
 class MongoDBSettings(BaseSettings):
     """Configurações do MongoDB."""
-    url: str = "mongodb://localhost:27017"
-    db_name: str = "sales_db"
-    collection: str = "sales"
+    url: str = os.getenv("MONGODB_URL", "mongodb://sales-mongodb:27017")
+    db_name: str = os.getenv("MONGODB_DB_NAME", "sales_db")
+    collection: str = os.getenv("MONGODB_COLLECTION", "sales")
 
     class Config:
         env_prefix = "MONGODB_"
@@ -25,10 +25,13 @@ class MongoDB:
     async def connect(self):
         """Estabelece conexão com o MongoDB."""
         try:
+            print(f"Conectando ao MongoDB em: {self.settings.url}")
             self.client = AsyncIOMotorClient(self.settings.url)
             # Testa a conexão
             await self.client.admin.command('ping')
+            print("Conexão com MongoDB estabelecida com sucesso!")
         except Exception as e:
+            print(f"Erro ao conectar ao MongoDB: {str(e)}")
             raise Exception(f"Erro ao conectar ao MongoDB: {str(e)}")
 
     async def disconnect(self):
