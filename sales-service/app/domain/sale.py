@@ -1,8 +1,13 @@
+from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Optional
 from bson import ObjectId
-from app.schemas.sale_schema import PaymentStatus
+
+class PaymentStatus(str, Enum):
+    PENDING = "PENDENTE"
+    PAID = "PAGO"
+    CANCELLED = "CANCELADA"
 
 class PyObjectId(ObjectId):
     @classmethod
@@ -54,7 +59,7 @@ class Sale(BaseModel):
     def to_dict(self):
         """Converte a venda para um dicionário."""
         return {
-            "id": self.id,
+            "_id": ObjectId(self.id),
             "vehicle_id": self.vehicle_id,
             "buyer_cpf": self.buyer_cpf,
             "sale_price": self.sale_price,
@@ -67,6 +72,13 @@ class Sale(BaseModel):
     @classmethod
     def from_dict(cls, data: dict):
         """Cria uma venda a partir de um dicionário."""
-        if "_id" in data:
-            data["id"] = str(data.pop("_id"))
-        return cls(**data) 
+        return cls(
+            id=str(data["_id"]),
+            vehicle_id=data["vehicle_id"],
+            buyer_cpf=data["buyer_cpf"],
+            sale_price=data["sale_price"],
+            payment_code=data["payment_code"],
+            payment_status=PaymentStatus(data["payment_status"]),
+            created_at=data.get("created_at"),
+            updated_at=data.get("updated_at")
+        ) 
