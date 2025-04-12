@@ -374,4 +374,108 @@ async def test_update_sale_invalid_data(client):
     )
     assert response.status_code == 422
     data = response.json()
-    assert "detail" in data 
+    assert "detail" in data
+
+@pytest.mark.asyncio
+async def test_create_sale_with_invalid_data(client, mock_sale):
+    response = await client.post(
+        "/sales",
+        json={
+            "vehicle_id": "invalid_id",
+            "buyer_cpf": "123",
+            "sale_price": -100.00
+        }
+    )
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_update_sale_with_invalid_data(client, mock_sale):
+    response = await client.put(
+        f"/sales/{mock_sale.id}",
+        json={
+            "sale_price": -100.00,
+            "payment_status": "invalid_status"
+        }
+    )
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_mark_sale_as_paid_with_invalid_id(client):
+    response = await client.patch(
+        "/sales/invalid_id/mark-as-paid"
+    )
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_mark_sale_as_canceled_with_invalid_id(client):
+    response = await client.patch(
+        "/sales/invalid_id/mark-as-canceled"
+    )
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_mark_sale_as_pending_with_invalid_id(client):
+    response = await client.patch(
+        "/sales/invalid_id/mark-as-pending"
+    )
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_get_sale_by_payment_code_with_invalid_code(client):
+    response = await client.get(
+        "/sales/payment/invalid_code"
+    )
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def test_get_sales_by_status_with_invalid_status(client):
+    response = await client.get(
+        "/sales/status/invalid_status"
+    )
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_create_sale_with_missing_fields(client):
+    response = await client.post(
+        "/sales",
+        json={
+            "vehicle_id": str(ObjectId())
+        }
+    )
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_create_sale_with_duplicate_payment_code(client, mock_sale):
+    # Primeiro cria uma venda
+    response = await client.post(
+        "/sales",
+        json={
+            "vehicle_id": mock_sale.vehicle_id,
+            "buyer_cpf": mock_sale.buyer_cpf,
+            "sale_price": mock_sale.sale_price
+        }
+    )
+    assert response.status_code == 422
+
+    # Tenta criar outra venda com o mesmo código de pagamento
+    response = await client.post(
+        "/sales",
+        json={
+            "vehicle_id": str(ObjectId()),
+            "buyer_cpf": "98765432109",
+            "sale_price": 60000.00
+        }
+    )
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_get_all_sales_with_empty_database(client):
+    response = await client.get("/sales")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+
+@pytest.mark.asyncio
+async def test_get_sales_by_status_with_empty_database(client):
+    response = await client.get("/sales/status/pending")
+    assert response.status_code == 422
+    assert len(response.json()) == 1 
