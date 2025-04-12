@@ -15,7 +15,7 @@ class SaleServiceImpl(SaleService):
             vehicle_id=sale_data.vehicle_id,
             buyer_cpf=sale_data.buyer_cpf,
             sale_price=sale_data.sale_price,
-            payment_code=f"PAY-{datetime.utcnow().timestamp()}",
+            payment_code=sale_data.payment_code,
             payment_status=PaymentStatus.PENDING,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
