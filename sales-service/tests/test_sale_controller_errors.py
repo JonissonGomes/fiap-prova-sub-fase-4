@@ -147,4 +147,103 @@ async def test_get_sale_invalid_id(client):
     response = await client.get("/sales/invalid_id")
     
     assert response.status_code == 400
-    assert "ID inválido" in response.json()["detail"] 
+    assert "ID inválido" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_payment_webhook_success(client, mock_sale_service):
+    # Mock da venda existente
+    mock_sale = Sale(
+        id="test_sale_id",
+        vehicle_id="test_vehicle_id",
+        buyer_cpf="12345678900",
+        sale_price=50000.0,
+        payment_code="PAY123",
+        payment_status=PaymentStatus.PENDING
+    )
+    mock_sale_service.get_sale_by_payment_code.return_value = mock_sale
+    mock_sale_service.update_payment_status.return_value = mock_sale
+
+    response = await client.post(
+        "/sales/webhook/payment",
+        json={
+            "payment_code": "PAY123",
+            "status": "PAGO",
+            "vehicle_id": "test_vehicle_id"
+        }
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["payment_code"] == "PAY123"
+    assert data["payment_status"] == "PENDENTE"
+    mock_sale_service.get_sale_by_payment_code.assert_called_once_with("PAY123")
+    mock_sale_service.update_payment_status.assert_called_once_with("test_sale_id", PaymentStatus.PAID)
+
+@pytest.mark.asyncio
+async def test_payment_webhook_invalid_status(client, mock_sale_service):
+    response = await client.post(
+        "/sales/webhook/payment",
+        json={
+            "payment_code": "PAY123",
+            "status": "INVALIDO",
+            "vehicle_id": "test_vehicle_id"
+        }
+    )
+
+    assert response.status_code == 400
+    assert "Status de pagamento inválido" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_payment_webhook_missing_fields(client, mock_sale_service):
+    response = await client.post(
+        "/sales/webhook/payment",
+        json={
+            "payment_code": "PAY123"
+            # status e vehicle_id faltando
+        }
+    )
+
+    assert response.status_code == 400
+    assert "Dados de pagamento incompletos" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_payment_webhook_sale_not_found(client, mock_sale_service):
+    mock_sale_service.get_sale_by_payment_code.return_value = None
+
+    response = await client.post(
+        "/sales/webhook/payment",
+        json={
+            "payment_code": "PAY123",
+            "status": "PAGO",
+            "vehicle_id": "test_vehicle_id"
+        }
+    )
+
+    assert response.status_code == 404
+    assert "Venda não encontrada" in response.json()["detail"]
+
+@pytest.mark.asyncio
+async def test_payment_webhook_update_error(client, mock_sale_service):
+    # Mock da venda existente
+    mock_sale = Sale(
+        id="test_sale_id",
+        vehicle_id="test_vehicle_id",
+        buyer_cpf="12345678900",
+        sale_price=50000.0,
+        payment_code="PAY123",
+        payment_status=PaymentStatus.PENDING
+    )
+    mock_sale_service.get_sale_by_payment_code.return_value = mock_sale
+    mock_sale_service.update_payment_status.return_value = None
+
+    response = await client.post(
+        "/sales/webhook/payment",
+        json={
+            "payment_code": "PAY123",
+            "status": "PENDENTE",
+            "vehicle_id": "test_vehicle_id"
+        }
+    )
+
+    assert response.status_code == 404
+    assert "Erro ao atualizar status da venda" in response.json()["detail"]

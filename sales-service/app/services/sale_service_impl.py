@@ -56,8 +56,8 @@ class SaleServiceImpl(SaleService):
         if not result:
             raise Exception("Venda não encontrada")
 
-    async def update_payment_status(self, payment_code: str, status: str) -> Optional[Sale]:
-        sale = await self.repository.find_by_payment_code(payment_code)
+    async def update_payment_status(self, sale_id: str, status: PaymentStatus) -> Optional[Sale]:
+        sale = await self.repository.find_by_id(sale_id)
         if not sale:
             raise Exception("Venda não encontrada")
         sale.payment_status = status
