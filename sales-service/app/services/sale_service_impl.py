@@ -1,76 +1,71 @@
 from typing import List, Optional
-from app.domain.sale import Sale
-from app.ports.sale_service import SaleService
-from app.ports.sale_repository import SaleRepository
-from app.exceptions import SaleNotFoundError
+from app.domain.sale import Sale, PaymentStatus
+from app.domain.sale_schema import SaleCreate, SaleUpdate
+from app.services.sale_service import SaleService
+from app.adapters.mongodb_sale_repository import MongoDBSaleRepository
 from datetime import datetime
-from app.schemas.sale_schema import PaymentStatus
+
 
 class SaleServiceImpl(SaleService):
-    """Implementação do serviço de vendas."""
-
-    def __init__(self, repository: SaleRepository):
+    def __init__(self, repository: MongoDBSaleRepository):
         self.repository = repository
 
-    async def create_sale(self, sale: Sale) -> Sale:
-        """Cria uma nova venda."""
-        # Verifica se já existe uma venda para o veículo
-        existing_sale = await self.repository.find_by_vehicle_id(sale.vehicle_id)
-        if existing_sale:
-            raise ValueError(f"Já existe uma venda para o veículo {sale.vehicle_id}")
+    async def create_sale(self, sale_data: SaleCreate) -> Sale:
+        new_sale = Sale(
+            vehicle_id=sale_data.vehicle_id,
+            buyer_cpf=sale_data.buyer_cpf,
+            sale_price=sale_data.sale_price,
+            payment_code=sale_data.payment_code,
+            payment_status=PaymentStatus.PENDING,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        return await self.repository.save(new_sale)
 
-        return await self.repository.save(sale)
-
-    async def get_sale(self, sale_id: str) -> Sale:
-        """Obtém uma venda pelo ID."""
+    async def get_sale(self, sale_id: str) -> Optional[Sale]:
         sale = await self.repository.find_by_id(sale_id)
         if not sale:
-            raise SaleNotFoundError(sale_id)
+            raise Exception("Venda não encontrada")
         return sale
 
     async def get_sale_by_vehicle_id(self, vehicle_id: str) -> Optional[Sale]:
-        """Obtém uma venda pelo ID do veículo."""
-        return await self.repository.find_by_vehicle_id(vehicle_id)
-
-    async def get_sale_by_payment_code(self, payment_code: str) -> Optional[Sale]:
-        """Obtém uma venda pelo código de pagamento."""
-        return await self.repository.find_by_payment_code(payment_code)
+        sale = await self.repository.find_by_vehicle_id(vehicle_id)
+        if not sale:
+            raise Exception("Venda não encontrada")
+        return sale
 
     async def get_all_sales(self) -> List[Sale]:
-        """Lista todas as vendas."""
         return await self.repository.find_all()
 
-    async def get_sales_by_status(self, status: PaymentStatus) -> List[Sale]:
-        """Lista vendas por status."""
+    async def get_sales_by_status(self, status: str) -> List[Sale]:
         return await self.repository.find_by_status(status)
 
-    async def update_sale(self, sale: Sale) -> Sale:
-        """Atualiza uma venda."""
-        existing_sale = await self.repository.find_by_id(sale.id)
-        if not existing_sale:
-            raise SaleNotFoundError(sale.id)
+    async def update_sale(self, sale_id: str, sale_data: SaleUpdate) -> Optional[Sale]:
+        existing = await self.repository.find_by_id(sale_id)
+        if not existing:
+            raise Exception("Venda não encontrada")
 
-        # Se o veículo mudou, verifica se já existe uma venda para o novo veículo
-        if sale.vehicle_id != existing_sale.vehicle_id:
-            vehicle_sale = await self.repository.find_by_vehicle_id(sale.vehicle_id)
-            if vehicle_sale:
-                raise ValueError(f"Já existe uma venda para o veículo {sale.vehicle_id}")
+        update_fields = sale_data.dict(exclude_unset=True)
+        for key, value in update_fields.items():
+            setattr(existing, key, value)
+        existing.updated_at = datetime.utcnow()
+        return await self.repository.update(existing)
 
+    async def delete_sale(self, sale_id: str) -> None:
+        result = await self.repository.delete(sale_id)
+        if not result:
+            raise Exception("Venda não encontrada")
+
+    async def update_payment_status(self, payment_code: str, status: str) -> Optional[Sale]:
+        sale = await self.repository.find_by_payment_code(payment_code)
+        if not sale:
+            raise Exception("Venda não encontrada")
+        sale.payment_status = status
+        sale.updated_at = datetime.utcnow()
         return await self.repository.update(sale)
 
-    async def delete_sale(self, sale_id: str) -> bool:
-        """Remove uma venda."""
-        sale = await self.repository.find_by_id(sale_id)
+    async def get_sale_by_payment_code(self, payment_code: str) -> Optional[Sale]:
+        sale = await self.repository.find_by_payment_code(payment_code)
         if not sale:
-            raise SaleNotFoundError(sale_id)
-        return await self.repository.delete(sale_id)
-
-    async def update_payment_status(self, sale_id: str, status: PaymentStatus) -> Sale:
-        """Atualiza o status de pagamento de uma venda."""
-        sale = await self.repository.find_by_id(sale_id)
-        if not sale:
-            raise SaleNotFoundError(sale_id)
-
-        sale.payment_status = status
-        sale.updated_at = datetime.now()
-        return await self.repository.update(sale) 
+            raise Exception("Venda não encontrada")
+        return sale

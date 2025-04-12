@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
+from typing import Optional
 
 class PaymentStatus(str, Enum):
     PENDING = "PENDENTE"
@@ -9,11 +10,11 @@ class PaymentStatus(str, Enum):
 
 class SaleBase(BaseModel):
     """Schema base para vendas."""
-    vehicle_id: str
-    buyer_cpf: str
-    sale_price: float
-    payment_code: str
-    payment_status: PaymentStatus = PaymentStatus.PENDING
+    vehicle_id: str = Field(..., min_length=1, description="ID do veículo")
+    buyer_cpf: str = Field(..., min_length=11, max_length=11, description="CPF do comprador")
+    sale_price: float = Field(..., gt=0, description="Preço da venda")
+    payment_code: str = Field(..., min_length=1, description="Código do pagamento")
+    payment_status: PaymentStatus = Field(default=PaymentStatus.PENDING, description="Status do pagamento")
 
     @validator('buyer_cpf')
     def validate_cpf(cls, v):
@@ -23,16 +24,26 @@ class SaleBase(BaseModel):
             raise ValueError('CPF deve conter 11 dígitos')
         return v
 
+    @validator('payment_status', pre=True)
+    def validate_payment_status(cls, v):
+        if isinstance(v, str):
+            try:
+                return PaymentStatus(v)
+            except ValueError:
+                raise ValueError(f"Status de pagamento inválido: {v}")
+        return v
+
 class SaleCreate(SaleBase):
-    """Schema para criação de venda."""
     pass
 
 class SaleUpdate(SaleBase):
-    """Schema para atualização de venda."""
-    pass
+    vehicle_id: Optional[str] = Field(None, min_length=1, description="ID do veículo")
+    buyer_cpf: Optional[str] = Field(None, min_length=11, max_length=11, description="CPF do comprador")
+    sale_price: Optional[float] = Field(None, gt=0, description="Preço da venda")
+    payment_code: Optional[str] = Field(None, min_length=1, description="Código do pagamento")
+    payment_status: Optional[PaymentStatus] = Field(None, description="Status do pagamento")
 
 class SaleResponse(SaleBase):
-    """Schema para resposta de venda."""
     id: str
     created_at: datetime
     updated_at: datetime
@@ -42,7 +53,6 @@ class SaleResponse(SaleBase):
 
     @classmethod
     def from_domain(cls, sale):
-        """Converte um objeto de domínio para o schema de resposta."""
         return cls(
             id=str(sale.id),
             vehicle_id=sale.vehicle_id,
