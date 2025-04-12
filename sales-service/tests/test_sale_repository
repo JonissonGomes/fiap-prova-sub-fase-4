@@ -1,0 +1,157 @@
+import pytest
+from datetime import datetime
+from bson import ObjectId
+from app.domain.sale import Sale, PaymentStatus
+from app.services.sale_service_impl import SaleServiceImpl
+from app.adapters.mongodb_sale_repository import MongoDBSaleRepository
+from app.schemas.sale_schema import SaleCreate, SaleUpdate
+
+@pytest.fixture
+def mock_sale():
+    return Sale(
+        id=str(ObjectId()),
+        vehicle_id=str(ObjectId()),
+        buyer_cpf="12345678901",
+        sale_price=50000.00,
+        payment_code="PAY123",
+        payment_status=PaymentStatus.PENDING,
+        created_at=datetime.now(),
+        updated_at=datetime.now()
+    )
+
+@pytest.fixture
+def mock_repository(mock_sale):
+    class MockRepository:
+        async def create(self, sale: Sale) -> Sale:
+            return mock_sale
+
+        async def get(self, sale_id: str) -> Sale:
+            return mock_sale
+
+        async def get_all(self) -> list[Sale]:
+            return [mock_sale]
+
+        async def update(self, sale: Sale) -> Sale:
+            return mock_sale
+
+        async def delete(self, sale_id: str) -> bool:
+            return True
+
+        async def get_by_status(self, status: PaymentStatus) -> list[Sale]:
+            return [mock_sale]
+
+        async def get_by_payment_code(self, payment_code: str) -> Sale:
+            return mock_sale
+
+    return MockRepository()
+
+@pytest.fixture
+def sale_service(mock_repository):
+    return SaleServiceImpl(mock_repository)
+
+@pytest.mark.asyncio
+async def test_create_sale(sale_service, mock_sale):
+    sale_data = SaleCreate(
+        vehicle_id=mock_sale.vehicle_id,
+        buyer_cpf=mock_sale.buyer_cpf,
+        sale_price=mock_sale.sale_price,
+        payment_code=mock_sale.payment_code,
+        payment_status=mock_sale.payment_status
+    )
+    
+    result = await sale_service.create_sale(sale_data)
+    assert result.vehicle_id == mock_sale.vehicle_id
+    assert result.buyer_cpf == mock_sale.buyer_cpf
+    assert result.sale_price == mock_sale.sale_price
+    assert result.payment_status == PaymentStatus.PENDING
+
+@pytest.mark.asyncio
+async def test_get_sale(sale_service, mock_sale):
+    result = await sale_service.get_sale(mock_sale.id)
+    assert result.id == mock_sale.id
+    assert result.vehicle_id == mock_sale.vehicle_id
+
+@pytest.mark.asyncio
+async def test_get_all_sales(sale_service, mock_sale):
+    result = await sale_service.get_all_sales()
+    assert len(result) == 1
+    assert result[0].id == mock_sale.id
+
+@pytest.mark.asyncio
+async def test_get_sales_by_status(sale_service, mock_sale):
+    result = await sale_service.get_sales_by_status(PaymentStatus.PENDING)
+    assert len(result) == 1
+    assert result[0].payment_status == PaymentStatus.PENDING
+
+@pytest.mark.asyncio
+async def test_get_sale_by_payment_code(sale_service, mock_sale):
+    result = await sale_service.get_sale_by_payment_code(mock_sale.payment_code)
+    assert result.payment_code == mock_sale.payment_code
+
+@pytest.mark.asyncio
+async def test_update_sale(sale_service, mock_sale):
+    update_data = SaleUpdate(
+        sale_price=60000.00,
+        payment_status=PaymentStatus.PAID
+    )
+    
+    result = await sale_service.update_sale(mock_sale.id, update_data)
+    assert result.sale_price == 60000.00
+    assert result.payment_status == PaymentStatus.PAID
+
+@pytest.mark.asyncio
+async def test_delete_sale(sale_service, mock_sale):
+    result = await sale_service.delete_sale(mock_sale.id)
+    assert result is True
+
+@pytest.mark.asyncio
+async def test_update_payment_status(sale_service, mock_sale):
+    result = await sale_service.update_payment_status(mock_sale.id, PaymentStatus.PAID)
+    assert result.payment_status == PaymentStatus.PAID
+
+@pytest.mark.asyncio
+async def test_get_sale_not_found(sale_service):
+    with pytest.raises(Exception):
+        await sale_service.get_sale("non_existent_id")
+
+@pytest.mark.asyncio
+async def test_update_sale_not_found(sale_service):
+    update_data = SaleUpdate(sale_price=60000.00)
+    with pytest.raises(Exception):
+        await sale_service.update_sale("non_existent_id", update_data)
+
+@pytest.mark.asyncio
+async def test_delete_sale_not_found(sale_service):
+    with pytest.raises(Exception):
+        await sale_service.delete_sale("non_existent_id")
+
+@pytest.mark.asyncio
+async def test_get_sale_by_payment_code_not_found(sale_service):
+    with pytest.raises(Exception):
+        await sale_service.get_sale_by_payment_code("non_existent_code")
+
+@pytest.mark.asyncio
+async def test_update_payment_status_not_found(sale_service):
+    with pytest.raises(Exception):
+        await sale_service.update_payment_status("non_existent_id", PaymentStatus.PAID)
+
+@pytest.mark.asyncio
+async def test_get_sales_by_status_empty(sale_service):
+    result = await sale_service.get_sales_by_status(PaymentStatus.CANCELED)
+    assert len(result) == 0
+
+@pytest.mark.asyncio
+async def test_create_sale_invalid_data(sale_service):
+    with pytest.raises(Exception):
+        await sale_service.create_sale(SaleCreate(
+            vehicle_id="invalid_id",
+            buyer_cpf="123",
+            sale_price=-100.00
+        ))
+
+@pytest.mark.asyncio
+async def test_update_sale_invalid_data(sale_service, mock_sale):
+    with pytest.raises(Exception):
+        await sale_service.update_sale(mock_sale.id, SaleUpdate(
+            sale_price=-100.00
+        ))
