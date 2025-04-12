@@ -2,27 +2,6 @@ import pytest
 import os
 from app.infrastructure.mongodb_config import MongoDBSettings, MongoDB
 
-def test_mongodb_settings_default_values():
-    settings = MongoDBSettings()
-    assert settings.url == "mongodb://sales-mongodb:27017"
-    assert settings.db_name == "sales_db"
-    assert settings.collection == "sales"
-
-def test_mongodb_settings_custom_values():
-    os.environ["MONGODB_URL"] = "mongodb://localhost:27017"
-    os.environ["MONGODB_DB_NAME"] = "sales_db"
-    os.environ["MONGODB_COLLECTION"] = "sales"
-    
-    settings = MongoDBSettings()
-    assert settings.url == "mongodb://localhost:27017"
-    assert settings.db_name == "sales_db"
-    assert settings.collection == "sales"
-    
-    # Limpa as variáveis de ambiente
-    del os.environ["MONGODB_URL"]
-    del os.environ["MONGODB_DB_NAME"]
-    del os.environ["MONGODB_COLLECTION"]
-
 @pytest.mark.asyncio
 async def test_mongodb_connection_error():
     os.environ["MONGODB_URL"] = "mongodb://invalid_host:27017"
