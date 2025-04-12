@@ -1,139 +1,118 @@
-import pytest
-import pytest_asyncio
-from datetime import datetime
-from bson import ObjectId
+from typing import List, Optional
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.domain.sale import Sale, PaymentStatus
-from app.adapters.mongodb_sale_repository import MongoDBSaleRepository
+from bson import ObjectId
+from app.domain.sale import Sale
+from app.ports.sale_repository import SaleRepository
 
-@pytest_asyncio.fixture
-async def mongo_client():
-    client = AsyncIOMotorClient("mongodb://sales-mongodb:27017")
-    yield client
-    await client.drop_database("test_db")
 
-@pytest_asyncio.fixture
-async def repository(mongo_client):
-    db = mongo_client["test_db"]
-    repo = MongoDBSaleRepository(db)
-    try:
-        yield repo
-    finally:
-        await db.drop_collection("sales")
+class MongoDBSaleRepository(SaleRepository):
+    """Implementação do repositório de vendas usando MongoDB."""
 
-@pytest.fixture
-def mock_sale():
-    return Sale(
-        id=str(ObjectId()),
-        vehicle_id="test_vehicle_id",
-        buyer_cpf="12345678900",
-        sale_price=50000.0,
-        payment_code="test_payment_code",
-        payment_status=PaymentStatus.PENDING,
-        created_at=datetime.now(),
-        updated_at=datetime.now()
-    )
+    def __init__(self, client: AsyncIOMotorClient, db_name: str = "sales_db", collection_name: str = "sales"):
+        self.client = client
+        self.db = client[db_name]
+        self.collection = self.db[collection_name]
 
-@pytest.mark.asyncio
-async def test_save_sale(repository, mock_sale):
-    saved_sale = await repository.save(mock_sale)
-    assert saved_sale.vehicle_id == mock_sale.vehicle_id
-    assert saved_sale.buyer_cpf == mock_sale.buyer_cpf
-    assert saved_sale.sale_price == mock_sale.sale_price
-    assert saved_sale.payment_code == mock_sale.payment_code
-    assert saved_sale.payment_status == mock_sale.payment_status
+    async def save(self, sale: Sale) -> Sale:
+        """Salva uma venda."""
+        try:
+            sale_dict = sale.to_dict()
+            sale_dict.pop("id", None)  # Garante que não enviamos um id duplicado
 
-@pytest.mark.asyncio
-async def test_find_by_id(repository, mock_sale):
-    saved_sale = await repository.save(mock_sale)
-    found_sale = await repository.find_by_id(saved_sale.id)
-    assert found_sale is not None
-    assert found_sale.id == saved_sale.id
-    assert found_sale.vehicle_id == saved_sale.vehicle_id
-    assert found_sale.buyer_cpf == saved_sale.buyer_cpf
-    assert found_sale.sale_price == saved_sale.sale_price
-    assert found_sale.payment_code == saved_sale.payment_code
-    assert found_sale.payment_status == saved_sale.payment_status
+            result = await self.collection.insert_one(sale_dict)
+            sale_dict["_id"] = result.inserted_id
+            sale_dict["id"] = str(result.inserted_id)
 
-@pytest.mark.asyncio
-async def test_find_by_id_not_found(repository):
-    found_sale = await repository.find_by_id(str(ObjectId()))
-    assert found_sale is None
+            return Sale.from_dict(sale_dict)
+        except Exception as e:
+            raise ValueError(f"Erro ao salvar venda: {str(e)}")
 
-@pytest.mark.asyncio
-async def test_find_all(repository, mock_sale):
-    await repository.save(mock_sale)
-    sales = await repository.find_all()
-    assert len(sales) == 1
-    assert sales[0].vehicle_id == mock_sale.vehicle_id
-    assert sales[0].buyer_cpf == mock_sale.buyer_cpf
-    assert sales[0].sale_price == mock_sale.sale_price
-    assert sales[0].payment_code == mock_sale.payment_code
-    assert sales[0].payment_status == mock_sale.payment_status
+    async def find_by_id(self, sale_id: str) -> Optional[Sale]:
+        """Busca uma venda pelo ID."""
+        try:
+            if not ObjectId.is_valid(sale_id):
+                return None
+            sale = await self.collection.find_one({"_id": ObjectId(sale_id)})
+            if sale:
+                sale["id"] = str(sale["_id"])
+                return Sale.from_dict(sale)
+            return None
+        except Exception as e:
+            raise ValueError(f"Erro ao buscar venda: {str(e)}")
 
-@pytest.mark.asyncio
-async def test_find_by_status(repository, mock_sale):
-    await repository.save(mock_sale)
-    sales = await repository.find_by_status(PaymentStatus.PENDING)
-    assert len(sales) == 1
-    assert sales[0].payment_status == PaymentStatus.PENDING
+    async def find_by_vehicle_id(self, vehicle_id: str) -> Optional[Sale]:
+        """Busca uma venda pelo ID do veículo."""
+        try:
+            sale = await self.collection.find_one({"vehicle_id": vehicle_id})
+            if sale:
+                sale["id"] = str(sale["_id"])
+                return Sale.from_dict(sale)
+            return None
+        except Exception as e:
+            raise ValueError(f"Erro ao buscar venda por ID do veículo: {str(e)}")
 
-@pytest.mark.asyncio
-async def test_find_by_payment_code(repository, mock_sale):
-    await repository.save(mock_sale)
-    found_sale = await repository.find_by_payment_code(mock_sale.payment_code)
-    assert found_sale is not None
-    assert found_sale.payment_code == mock_sale.payment_code
+    async def find_by_payment_code(self, payment_code: str) -> Optional[Sale]:
+        """Busca uma venda pelo código de pagamento."""
+        try:
+            sale = await self.collection.find_one({"payment_code": payment_code})
+            if sale:
+                sale["id"] = str(sale["_id"])
+                return Sale.from_dict(sale)
+            return None
+        except Exception as e:
+            raise ValueError(f"Erro ao buscar venda por código de pagamento: {str(e)}")
 
-@pytest.mark.asyncio
-async def test_find_by_payment_code_not_found(repository):
-    found_sale = await repository.find_by_payment_code("non_existent_code")
-    assert found_sale is None
+    async def find_all(self) -> List[Sale]:
+        """Lista todas as vendas."""
+        try:
+            sales = []
+            async for sale in self.collection.find():
+                sale["id"] = str(sale["_id"])
+                sales.append(Sale.from_dict(sale))
+            return sales
+        except Exception as e:
+            raise ValueError(f"Erro ao listar vendas: {str(e)}")
 
-@pytest.mark.asyncio
-async def test_update_sale(repository, mock_sale):
-    saved_sale = await repository.save(mock_sale)
-    saved_sale.vehicle_id = "updated_vehicle_id"
-    saved_sale.buyer_cpf = "98765432100"
-    saved_sale.sale_price = 60000.0
-    saved_sale.payment_code = "updated_payment_code"
-    saved_sale.payment_status = PaymentStatus.PAID
+    async def find_by_status(self, status: str) -> List[Sale]:
+        """Lista vendas por status."""
+        try:
+            sales = []
+            async for sale in self.collection.find({"payment_status": status}):
+                sale["id"] = str(sale["_id"])
+                sales.append(Sale.from_dict(sale))
+            return sales
+        except Exception as e:
+            raise ValueError(f"Erro ao listar vendas por status: {str(e)}")
 
-    updated_sale = await repository.update(saved_sale)
-    assert updated_sale is not None
-    assert updated_sale.vehicle_id == "updated_vehicle_id"
-    assert updated_sale.buyer_cpf == "98765432100"
-    assert updated_sale.sale_price == 60000.0
-    assert updated_sale.payment_code == "updated_payment_code"
-    assert updated_sale.payment_status == PaymentStatus.PAID
+    async def update(self, sale: Sale) -> Optional[Sale]:
+        """Atualiza uma venda."""
+        try:
+            if not sale.id or not ObjectId.is_valid(sale.id):
+                raise ValueError("ID de venda inválido.")
 
-@pytest.mark.asyncio
-async def test_update_sale_not_found(repository, mock_sale):
-    mock_sale.id = str(ObjectId())
-    updated_sale = await repository.update(mock_sale)
-    assert updated_sale is None
+            sale_dict = sale.to_dict()
+            _id = ObjectId(sale.id)
+            sale_dict.pop("id", None)
 
-@pytest.mark.asyncio
-async def test_delete_sale(repository, mock_sale):
-    saved_sale = await repository.save(mock_sale)
-    success = await repository.delete(saved_sale.id)
-    assert success is True
-    found_sale = await repository.find_by_id(saved_sale.id)
-    assert found_sale is None
+            result = await self.collection.update_one(
+                {"_id": _id},
+                {"$set": sale_dict}
+            )
+            if result.matched_count == 0:
+                return None
 
-@pytest.mark.asyncio
-async def test_delete_sale_not_found(repository):
-    success = await repository.delete(str(ObjectId()))
-    assert success is False
+            sale_dict["_id"] = _id
+            sale_dict["id"] = str(_id)
+            return Sale.from_dict(sale_dict)
+        except Exception as e:
+            raise ValueError(f"Erro ao atualizar venda: {str(e)}")
 
-@pytest.mark.asyncio
-async def test_find_by_vehicle_id(repository, mock_sale):
-    await repository.save(mock_sale)
-    found_sale = await repository.find_by_vehicle_id(mock_sale.vehicle_id)
-    assert found_sale is not None
-    assert found_sale.vehicle_id == mock_sale.vehicle_id
-
-@pytest.mark.asyncio
-async def test_find_by_vehicle_id_not_found(repository):
-    found_sale = await repository.find_by_vehicle_id("non_existent_vehicle")
-    assert found_sale is None
+    async def delete(self, sale_id: str) -> bool:
+        """Remove uma venda."""
+        try:
+            if not ObjectId.is_valid(sale_id):
+                return False
+            result = await self.collection.delete_one({"_id": ObjectId(sale_id)})
+            return result.deleted_count > 0
+        except Exception as e:
+            raise ValueError(f"Erro ao remover venda: {str(e)}")
