@@ -59,6 +59,62 @@ O sistema segue uma arquitetura de microsserviços com os seguintes componentes:
 - Webhooks para eventos assíncronos
 - Circuit breaker para resiliência
 
+## Repositórios
+
+### Core Service
+- **VehicleRepository**: Interface para operações CRUD de veículos
+- **MongoDBVehicleRepository**: Implementação concreta usando MongoDB
+  - Suporta operações assíncronas
+  - Implementa índices para otimização
+  - Tratamento de erros e retry policies
+
+### Sales Service
+- **SaleRepository**: Interface para operações CRUD de vendas
+- **MongoDBSaleRepository**: Implementação concreta usando MongoDB
+  - Suporta operações assíncronas
+  - Implementa índices para otimização
+  - Tratamento de erros e retry policies
+  - Validação de dados e integridade referencial
+
+## Testes
+
+### Cobertura de Testes
+O projeto mantém uma cobertura de testes acima de 80% para garantir a qualidade do código. Os testes são organizados em:
+
+#### Testes de Domínio
+- Validação de regras de negócio
+- Testes de modelos e entidades
+- Testes de exceções personalizadas
+
+#### Testes de Serviço
+- Testes de casos de sucesso
+- Testes de casos de erro
+- Testes de integração com repositórios
+
+#### Testes de API
+- Testes de endpoints
+- Testes de validação de dados
+- Testes de casos de erro HTTP
+
+#### Testes de Repositório
+- Testes de operações CRUD
+- Testes de conexão com banco de dados
+- Testes de tratamento de erros
+
+### Executando os Testes
+```bash
+# Instalar dependências
+make install
+
+# Executar testes com cobertura
+make test-coverage
+
+# Executar testes específicos
+pytest tests/test_sale_controller.py -v
+pytest tests/test_sale_service.py -v
+pytest tests/test_sale_repository.py -v
+```
+
 ## Segurança
 O sistema implementa as seguintes medidas de segurança:
 
@@ -133,9 +189,15 @@ docker-compose logs -f
 
 ## Status dos Veículos
 Os veículos podem ter os seguintes status:
-- `AVAILABLE`: Veículo disponível para venda
-- `RESERVED`: Veículo reservado
-- `SOLD`: Veículo vendido
+- `DISPONÍVEL`: Veículo disponível para venda
+- `RESERVADO`: Veículo reservado
+- `VENDIDO`: Veículo vendido
+
+## Status de Pagamento
+As vendas podem ter os seguintes status de pagamento:
+- `PENDENTE`: Pagamento pendente
+- `PAGO`: Pagamento realizado
+- `CANCELADA`: Pagamento cancelado
 
 ## Rotas da API
 
@@ -152,7 +214,7 @@ Os veículos podem ter os seguintes status:
       "year": 2023,
       "color": "Prata",
       "price": 120000.00,
-      "status": "AVAILABLE"
+      "status": "DISPONÍVEL"
     }'
   ```
 
@@ -191,7 +253,7 @@ Os veículos podem ter os seguintes status:
       "year": 2023,
       "color": "Prata",
       "price": 125000.00,
-      "status": "AVAILABLE"
+      "status": "DISPONÍVEL"
     }'
   ```
 
@@ -227,7 +289,8 @@ Os veículos podem ter os seguintes status:
     -d '{
       "vehicle_id": "123",
       "buyer_cpf": "12345678901",
-      "sale_date": "2024-03-20T10:00:00Z"
+      "sale_price": 120000.00,
+      "payment_code": "PAY123"
     }'
   ```
 
@@ -237,7 +300,7 @@ Os veículos podem ter os seguintes status:
   curl -X GET http://localhost:8001/sales/
 
   # Listar vendas por status
-  curl -X GET "http://localhost:8001/sales/?status=PENDING"
+  curl -X GET "http://localhost:8001/sales/status/PENDENTE" # PAGO, CANCELADO
   ```
 
 - **Obter Venda por ID**
@@ -245,25 +308,51 @@ Os veículos podem ter os seguintes status:
   curl -X GET http://localhost:8001/sales/{sale_id}
   ```
 
+- **Obter Venda por Código de Pagamento**
+  ```bash
+  curl -X GET http://localhost:8001/sales/payment/{payment_code}
+  ```
+
+- **Atualizar Venda**
+  ```bash
+  curl -X PUT http://localhost:8001/sales/{sale_id} \
+    -H "Content-Type: application/json" \
+    -d '{
+      "sale_price": 125000.00
+    }'
+  ```
+
+- **Deletar Venda**
+  ```bash
+  curl -X DELETE http://localhost:8001/sales/{sale_id}
+  ```
+
+#### Gerenciamento de Status de Pagamento
+
+- **Marcar Venda como Pendente**
+  ```bash
+  curl -X PATCH http://localhost:8001/sales/{sale_id}/mark-as-pending
+  ```
+
+- **Marcar Venda como Paga**
+  ```bash
+  curl -X PATCH http://localhost:8001/sales/{sale_id}/mark-as-paid
+  ```
+
+- **Marcar Venda como Cancelada**
+  ```bash
+  curl -X PATCH http://localhost:8001/sales/{sale_id}/mark-as-canceled
+  ```
+
 - **Webhook de Pagamento**
   ```bash
   curl -X POST http://localhost:8001/sales/webhook/payment \
     -H "Content-Type: application/json" \
     -d '{
-      "payment_id": "123",
-      "status": "approved"
+      "payment_code": "HONDA4321",
+      "status": "PAGO",
+      "vehicle_id": "67f6dc9d1fd405347d2231e3"
     }'
-  ```
-
-#### Listagens Ordenadas
-- **Listar Veículos Disponíveis (Ordenados por Preço)**
-  ```bash
-  curl -X GET http://localhost:8001/sales/vehicles/available
-  ```
-
-- **Listar Veículos Vendidos (Ordenados por Preço)**
-  ```bash
-  curl -X GET http://localhost:8001/sales/vehicles/sold
   ```
 
 ## Exemplos de Uso
@@ -280,7 +369,7 @@ Os veículos podem ter os seguintes status:
        "year": 2023,
        "color": "Prata",
        "price": 120000.00,
-       "status": "AVAILABLE"
+       "status": "DISPONÍVEL"
      }'
    ```
 
@@ -306,7 +395,7 @@ Os veículos podem ter os seguintes status:
      -H "Content-Type: application/json" \
      -d '{
        "payment_id": "123",
-       "status": "approved"
+       "status": "PAGO"
      }'
    ```
 
@@ -327,7 +416,7 @@ Os veículos podem ter os seguintes status:
        "year": 2023,
        "color": "Preto",
        "price": 110000.00,
-       "status": "AVAILABLE"
+       "status": "DISPONÍVEL"
      }'
    ```
 
@@ -347,11 +436,11 @@ Os veículos podem ter os seguintes status:
    ```
 
 ## Fluxo de Status
-1. Um veículo começa como `AVAILABLE` (Disponível)
-2. Pode ser marcado como `RESERVED` (Reservado)
-3. Pode voltar para `AVAILABLE` (Disponível)
-4. Pode ser marcado como `SOLD` (Vendido)
-5. Uma vez `SOLD`, não pode mais mudar de status
+1. Um veículo começa como `DISPONÍVEL` (Disponível)
+2. Pode ser marcado como `RESERVADO` (Reservado)
+3. Pode voltar para `DISPONÍVEL` (Disponível)
+4. Pode ser marcado como `VENDIDO` (Vendido)
+5. Uma vez `VENDIDO`, não pode mais mudar de status
 
 ## Comandos Make
 
@@ -442,7 +531,7 @@ DELETE /vehicles/{vehicle_id}
 
 ##### List Sales
 ```http
-GET /sales?status=pending
+GET /sales?status=PENDENTE
 ```
 
 ##### Create Sale
@@ -469,7 +558,7 @@ Content-Type: application/json
 
 {
   "payment_id": "pay_123456789",
-  "status": "approved"
+  "status": "PAGO"
 }
 ```
 
