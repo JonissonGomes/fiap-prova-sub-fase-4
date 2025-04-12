@@ -572,19 +572,115 @@ GET /vehicles?status=available&sort=price
 GET /vehicles/sold?sort=price
 ```
 
-## Testando a API
+## Testando a Documentação da API
 
-Para testar a API, você pode usar o Insomnia:
+### Usando Swagger UI
 
-1. Importe os arquivos de configuração:
-   - `core-service/insomnia.json`
-   - `sales-service/insomnia.json`
+1. **Instale o Swagger UI**:
+```bash
+# Usando Docker
+docker pull swaggerapi/swagger-ui
+docker run -p 8080:8080 swaggerapi/swagger-ui
+```
 
-2. Configure o ambiente:
-   - Core Service: http://localhost:8000
-   - Sales Service: http://localhost:8001
+2. **Acesse a interface**:
+- Abra o navegador em `http://localhost:8080`
+- Cole o conteúdo do arquivo `openapi.json` no campo de URL
+- Clique em "Explore" para visualizar a documentação interativa
 
-3. Execute as requisições de exemplo
+### Usando ReDoc
+
+1. **Instale o ReDoc**:
+```bash
+# Usando npm
+npm install -g redoc-cli
+```
+
+2. **Gere a documentação**:
+```bash
+# Para o Core Service
+redoc-cli serve core-service/app/adapters/api/openapi.json
+
+# Para o Sales Service
+redoc-cli serve sales-service/app/adapters/api/openapi.json
+
+# Para o Payment Service
+redoc-cli serve payment-service/app/adapters/api/openapi.json
+```
+
+3. **Acesse a documentação**:
+- Abra o navegador em `http://localhost:8080`
+- A documentação será exibida em um formato mais amigável
+
+### Testando os Endpoints
+
+1. **Usando curl**:
+```bash
+# Teste de saúde do serviço
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+
+# Listar veículos
+curl http://localhost:8000/vehicles
+
+# Listar vendas
+curl http://localhost:8001/sales
+
+# Listar pagamentos
+curl http://localhost:8002/payments
+```
+
+2. **Usando Insomnia**:
+- Importe os arquivos de configuração:
+  - `core-service/insomnia.json`
+  - `sales-service/insomnia.json`
+  - `payment-service/insomnia.json`
+- Configure o ambiente com as URLs base:
+  - Core Service: http://localhost:8000
+  - Sales Service: http://localhost:8001
+  - Payment Service: http://localhost:8002
+
+3. **Usando Postman**:
+- Importe as coleções:
+  - `core-service/postman.json`
+  - `sales-service/postman.json`
+  - `payment-service/postman.json`
+- Configure as variáveis de ambiente:
+  - `BASE_URL_CORE`: http://localhost:8000
+  - `BASE_URL_SALES`: http://localhost:8001
+  - `BASE_URL_PAYMENT`: http://localhost:8002
+
+### Verificando a Validação da Documentação
+
+1. **Usando o Swagger Editor**:
+```bash
+# Instale o Swagger Editor
+docker pull swaggerapi/swagger-editor
+docker run -p 8081:8080 swaggerapi/swagger-editor
+```
+
+2. **Valide a documentação**:
+- Abra o navegador em `http://localhost:8081`
+- Cole o conteúdo do arquivo `openapi.json`
+- O editor mostrará erros de sintaxe ou validação
+
+### Dicas para Testes
+
+1. **Teste todos os endpoints**:
+- Verifique os métodos GET, POST, PUT, PATCH e DELETE
+- Teste diferentes combinações de parâmetros
+- Valide os códigos de resposta HTTP
+
+2. **Teste os casos de erro**:
+- Envie dados inválidos
+- Tente acessar recursos inexistentes
+- Verifique as mensagens de erro
+
+3. **Teste a integração**:
+- Verifique a comunicação entre os serviços
+- Teste os webhooks
+- Valide o fluxo completo de uma venda
 
 ## Requisitos
 
@@ -632,4 +728,38 @@ git push origin feature/nova-feature
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT. 
+Este projeto está licenciado sob a licença MIT.
+
+## Documentação da API
+
+O sistema possui três serviços principais, cada um com sua própria documentação OpenAPI:
+
+### Core Service (Veículos)
+- **URL Base**: http://localhost:8000
+- **Documentação**: `/app/adapters/api/openapi.json`
+- **Endpoints Principais**:
+  - CRUD de veículos
+  - Gerenciamento de status (disponível, reservado, vendido)
+  - Listagem por status
+
+### Sales Service (Vendas)
+- **URL Base**: http://localhost:8001
+- **Documentação**: `/app/adapters/api/openapi.json`
+- **Endpoints Principais**:
+  - CRUD de vendas
+  - Gerenciamento de status de pagamento
+  - Busca por veículo ou código de pagamento
+  - Listagem por status
+
+### Payment Service (Pagamentos)
+- **URL Base**: http://localhost:8002
+- **Documentação**: `/app/adapters/api/openapi.json`
+- **Endpoints Principais**:
+  - CRUD de pagamentos
+  - Gerenciamento de status
+  - Busca por código de pagamento
+  - Listagem por status
+
+Para visualizar a documentação interativa, você pode usar ferramentas como:
+- [Swagger UI](https://swagger.io/tools/swagger-ui/)
+- [ReDoc](https://github.com/Redocly/redoc) 
