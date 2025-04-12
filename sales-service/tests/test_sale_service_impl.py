@@ -50,12 +50,23 @@ async def test_delete_sale_error(sale_service, mock_repository):
 
 @pytest.mark.asyncio
 async def test_update_payment_status_error(sale_service, mock_repository):
-    mock_repository.find_by_payment_code.return_value = None
+    mock_repository.find_by_id.return_value = None
     
     with pytest.raises(Exception) as exc_info:
-        await sale_service.update_payment_status("test_payment_code", PaymentStatus.PAID)
+        await sale_service.update_payment_status("test_sale_id", PaymentStatus.PAID)
     
     assert "Venda não encontrada" in str(exc_info.value)
+
+@pytest.mark.asyncio
+async def test_update_payment_status_success(sale_service, mock_repository, mock_sale):
+    mock_repository.find_by_id.return_value = mock_sale
+    mock_repository.update.return_value = mock_sale
+    
+    updated_sale = await sale_service.update_payment_status("test_sale_id", PaymentStatus.PAID)
+    
+    assert updated_sale == mock_sale
+    assert updated_sale.payment_status == PaymentStatus.PAID
+    mock_repository.update.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_get_sale_error(sale_service, mock_repository):
