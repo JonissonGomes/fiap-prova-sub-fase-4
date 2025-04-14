@@ -1,9 +1,10 @@
-# Vehicle Management System
+# Sistema de Vendas de Veículos da FIAP
 
 ## Visão Geral
 Este projeto implementa um sistema de gerenciamento de veículos com dois serviços principais:
 - Core Service: Gerencia o cadastro e status dos veículos
 - Sales Service: Gerencia as vendas e reservas de veículos
+- Frontend: Interface web para centralizar todas as funcionalidades dos sistemas
 
 ## Estrutura do Projeto
 ```
