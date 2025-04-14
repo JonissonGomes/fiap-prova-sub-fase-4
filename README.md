@@ -765,8 +765,8 @@ docker run -p 8081:8080 swaggerapi/swagger-editor
 
 1. Clone o repositório:
 ```bash
-git clone [URL_DO_REPOSITORIO]
-cd [NOME_DO_DIRETORIO]
+git clone
+cd [NOME_DO_REPOSITORIO]
 ```
 
 2. Configure as variáveis de ambiente:
