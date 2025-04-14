@@ -37,11 +37,7 @@ class SaleCreate(SaleBase):
     pass
 
 class SaleUpdate(SaleBase):
-    vehicle_id: Optional[str] = Field(None, min_length=1, description="ID do veículo")
-    buyer_cpf: Optional[str] = Field(None, min_length=11, max_length=11, description="CPF do comprador")
-    sale_price: Optional[float] = Field(None, gt=0, description="Preço da venda")
-    payment_code: Optional[str] = Field(None, min_length=1, description="Código do pagamento")
-    payment_status: Optional[PaymentStatus] = Field(None, description="Status do pagamento")
+    pass
 
 class SaleResponse(SaleBase):
     id: str
