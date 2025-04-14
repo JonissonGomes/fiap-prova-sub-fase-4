@@ -32,7 +32,7 @@ Este projeto implementa um sistema de gerenciamento de veículos com dois servi�
 ├── docker-compose.yml           # Configuração dos containers
 ├── Makefile                     # Comandos de desenvolvimento
 └── README.md                    # Documentação do projeto
-
+│
 ├── frontend/
 ├─── public/                    # Arquivos estáticos públicos
 │    ├── index.html            # Template HTML principal
