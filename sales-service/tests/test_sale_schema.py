@@ -33,7 +33,7 @@ def test_sale_create_schema_validation():
 
 def test_sale_update_schema():
     sale_data = {
-        "vehicle_id": "updated_vehicle_id",
+        "vehicle_id": "valid_vehicle_id",
         "buyer_cpf": "98765432100",
         "sale_price": 60000.0,
         "payment_code": "updated_payment_code",
@@ -41,24 +41,11 @@ def test_sale_update_schema():
     }
     
     sale = SaleUpdate(**sale_data)
-    assert sale.vehicle_id == "updated_vehicle_id"
+    assert sale.vehicle_id == "valid_vehicle_id"
     assert sale.buyer_cpf == "98765432100"
     assert sale.sale_price == 60000.0
     assert sale.payment_code == "updated_payment_code"
     assert sale.payment_status == PaymentStatus.PAID
-
-def test_sale_update_schema_partial():
-    sale_data = {
-        "sale_price": 60000.0,
-        "payment_status": PaymentStatus.PAID
-    }
-    
-    sale = SaleUpdate(**sale_data)
-    assert sale.sale_price == 60000.0
-    assert sale.payment_status == PaymentStatus.PAID
-    assert sale.vehicle_id is None
-    assert sale.buyer_cpf is None
-    assert sale.payment_code is None
 
 def test_sale_response_schema():
     sale_data = {

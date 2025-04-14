@@ -81,8 +81,17 @@ def mock_sale_service():
                 )
             ]
 
-        async def update_sale(self, sale: Sale) -> Sale:
-            return sale
+        async def update_sale(self, sale_id: str, sale_update: SaleUpdate) -> Sale:
+            return Sale(
+                id=sale_id,
+                vehicle_id=sale_update.vehicle_id,
+                buyer_cpf=sale_update.buyer_cpf,
+                sale_price=sale_update.sale_price,
+                payment_code=sale_update.payment_code,
+                payment_status=sale_update.payment_status,
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
 
         async def delete_sale(self, sale_id: str) -> bool:
             return True

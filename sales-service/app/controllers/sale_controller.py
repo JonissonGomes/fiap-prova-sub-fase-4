@@ -110,12 +110,12 @@ async def update_sale(sale_id: str, sale_update: SaleUpdate, service=Depends(get
     if not ObjectId.is_valid(sale_id):
         raise HTTPException(status_code=400, detail="ID inválido")
     
-    updated_sale = await service.update_sale(Sale(id=sale_id, **sale_update.dict()))
+    updated_sale = await service.update_sale(sale_id, sale_update)
     
     if not updated_sale:
         raise HTTPException(status_code=404, detail="Venda não encontrada")
     
-    return SaleResponse(**updated_sale.__dict__)
+    return SaleResponse.from_domain(updated_sale)
 
 @router.delete("/sales/{sale_id}")
 async def delete_sale(
