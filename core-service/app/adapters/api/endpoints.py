@@ -176,7 +176,7 @@ async def mark_vehicle_as_reserved(vehicle_id: str, vehicle_service: VehicleServ
     responses={
         200: {"description": "Veículo marcado como vendido"},
         404: {"description": "Veículo não encontrado"},
-        400: {"description": "Veículo não pode ser vendido (já está vendido)"}
+        400: {"description": "Veículo não pode ser vendido (já está vendido ou não está disponível/reservado)"}
     }
 )
 async def mark_vehicle_as_sold(vehicle_id: str, vehicle_service: VehicleService = Depends(get_vehicle_service)):

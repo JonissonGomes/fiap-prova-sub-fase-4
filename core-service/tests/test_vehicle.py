@@ -225,4 +225,23 @@ def test_update():
     # Assert
     assert vehicle.brand == "Honda"
     assert vehicle.model == "Civic"
+    assert vehicle.updated_at is not None
+
+def test_mark_as_sold_reserved():
+    # Arrange
+    vehicle_data = {
+        "brand": "Toyota",
+        "model": "Corolla",
+        "year": 2022,
+        "color": "Prata",
+        "price": 100000.0,
+        "status": VehicleStatus.RESERVED
+    }
+    vehicle = Vehicle(**vehicle_data)
+
+    # Act
+    vehicle.mark_as_sold()
+
+    # Assert
+    assert vehicle.status == VehicleStatus.SOLD
     assert vehicle.updated_at is not None 

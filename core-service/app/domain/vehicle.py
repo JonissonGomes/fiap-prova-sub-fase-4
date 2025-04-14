@@ -50,7 +50,7 @@ class Vehicle(VehicleBase):
     def mark_as_sold(self):
         if self.status == "VENDIDO":
             raise ValueError("Veículo já está vendido")
-        if self.status != "DISPONÍVEL":
+        if self.status not in ["DISPONÍVEL", "RESERVADO"]:
             raise ValueError("Veículo não está disponível para venda")
         
         self.status = "VENDIDO"
