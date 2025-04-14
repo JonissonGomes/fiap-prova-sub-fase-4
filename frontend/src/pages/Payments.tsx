@@ -119,18 +119,23 @@ const Payments: React.FC = () => {
     { field: 'payment_code', headerName: 'Código de Pagamento', width: 200 },
     {
       field: 'payment_status',
-      headerName: 'Status do pagamento',
-      width: 150,
-      renderCell: (params) => {
+      headerName: 'Status do Pagamento',
+      width: 250,
+      renderCell: params => {
         const statusColors = {
           [PaymentStatus.PENDING]: '#ed6c02',
           [PaymentStatus.PAID]: '#2e7d32',
           [PaymentStatus.CANCELLED]: '#d32f2f'
         };
         return (
-          <Typography sx={{ color: statusColors[params.value as PaymentStatus] }}>
-            {params.value}
-          </Typography>
+          <Box>
+            <Typography sx={{ color: statusColors[params.value as PaymentStatus] }}>
+              {params.value}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Atualizado em: {new Date(params.row.updated_at).toLocaleString('pt-BR')}
+            </Typography>
+          </Box>
         );
       }
     },

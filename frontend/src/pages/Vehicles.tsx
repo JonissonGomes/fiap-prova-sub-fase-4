@@ -144,7 +144,7 @@ const Vehicles: React.FC = () => {
     {
       field: 'status',
       headerName: 'Status',
-      width: 150,
+      width: 250,
       renderCell: params => {
         const statusColors = {
           [VehicleStatus.AVAILABLE]: '#2e7d32',
@@ -152,9 +152,14 @@ const Vehicles: React.FC = () => {
           [VehicleStatus.SOLD]: '#d32f2f'
         };
         return (
-          <Typography sx={{ color: statusColors[params.value as VehicleStatus] }}>
-            {params.value}
-          </Typography>
+          <Box>
+            <Typography sx={{ color: statusColors[params.value as VehicleStatus] }}>
+              {params.value}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Atualizado em: {new Date(params.row.updated_at).toLocaleString('pt-BR')}
+            </Typography>
+          </Box>
         );
       }
     },

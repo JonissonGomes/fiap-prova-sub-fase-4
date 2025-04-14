@@ -277,7 +277,7 @@ const Sales: React.FC = () => {
     {
       field: 'payment_status',
       headerName: 'Status da venda',
-      width: 150,
+      width: 250,
       renderCell: (params) => {
         const statusColors = {
           [PaymentStatus.PENDING]: '#ed6c02',
@@ -285,9 +285,14 @@ const Sales: React.FC = () => {
           [PaymentStatus.CANCELLED]: '#d32f2f'
         };
         return (
-          <Typography sx={{ color: statusColors[params.value as PaymentStatus] }}>
-            {params.value}
-          </Typography>
+          <Box>
+            <Typography sx={{ color: statusColors[params.value as PaymentStatus] }}>
+              {params.value}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+              Atualizado em: {new Date(params.row.updated_at).toLocaleString('pt-BR')}
+            </Typography>
+          </Box>
         );
       }
     },
@@ -296,7 +301,9 @@ const Sales: React.FC = () => {
       headerName: 'Ações',
       width: 200,
       renderCell: (params) => {
-        if (params.row.payment_status === PaymentStatus.PAID) {
+        // Não mostrar ações para vendas pagas ou canceladas
+        if (params.row.payment_status === PaymentStatus.PAID || 
+            params.row.payment_status === PaymentStatus.CANCELLED) {
           return null;
         }
         
