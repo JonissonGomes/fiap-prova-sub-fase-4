@@ -190,8 +190,8 @@ docker-compose logs -f
 ## Status dos Veículos
 Os veículos podem ter os seguintes status:
 - `DISPONÍVEL`: Veículo disponível para venda
-- `RESERVADO`: Veículo reservado
-- `VENDIDO`: Veículo vendido
+- `RESERVADO`: Veículo reservado para uma venda pendente
+- `VENDIDO`: Veículo já vendido
 
 ## Status de Pagamento
 As vendas podem ter os seguintes status de pagamento:
