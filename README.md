@@ -26,30 +26,27 @@ O sistema é composto por três serviços principais:
 
 ## Execução do Projeto
 
-### 1. Instalação Inicial
-```bash
-# Clone o repositório
-git clone [URL_DO_REPOSITORIO]
-cd [NOME_DO_REPOSITORIO]
-
-# Configurar ambiente
-make setup
-
-# Instalar dependências
-make install
-```
-
-### 2. Configuração do Ambiente
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+### 1. Configuração do Ambiente
+Altere o arquivo `.env.example` na raiz do projeto com as seguintes variáveis:
 ```env
 # MongoDB
 MONGODB_URL=mongodb://localhost:27017
 DATABASE_NAME=vehicle_db
 
 # Serviços
-VEHICLE_SERVICE_URL=http://localhost:8000
+# MongoDB Configuration
+MONGODB_URL=URI_DO_BANCO
+
+MONGODB_DATABASE=NOME_DA_BASE
+MONGODB_COLLECTION=NOME_DA_COLEÇAO
+
+# Core Service Configuration
+CORE_SERVICE_PORT=8000
+SALES_SERVICE_PORT=8001
+
+# Sales Service Configuration
+CORE_SERVICE_URL=http://localhost:8000
 SALES_SERVICE_URL=http://localhost:8001
-PAYMENTS_SERVICE_URL=http://localhost:8002
 
 # Frontend
 REACT_APP_API_URL=http://localhost:8000
@@ -58,7 +55,7 @@ REACT_APP_SALES_SERVICE_URL=http://localhost:8002
 REACT_APP_PAYMENTS_SERVICE_URL=http://localhost:8003
 ```
 
-### 3. Execução dos Serviços
+### 2. Execução dos Serviços
 ```bash
 # Configura os ambientes
 make setup
@@ -68,7 +65,23 @@ make install
 
 # Iniciar todos os serviços
 make up
+```
 
+### 2.1 Executar Interface Web
+```bash
+
+# Iniciar front end
+cd frontend
+
+# Instalar dependências
+npm install
+
+# Iniciar aplicação
+npm start
+```
+
+### 2.2 Comandos Isolados
+```bash
 # Iniciar apenas o banco de dados das aplicações
 make mongodb
 
@@ -94,12 +107,9 @@ make down
 
 # Parar serviços sem remover volumes
 make stop
-
-# Reiniciar serviços
-make restart
 ```
 
-### 4. Testes
+### 3. Testes
 ```bash
 # Executar todos os testes
 make test
@@ -115,16 +125,7 @@ make coverage-sales    # Cobertura do serviço de vendas
 make coverage-report   # Gerar relatório HTML de cobertura
 ```
 
-### 5. Qualidade de Código
-```bash
-# Executar linter
-make lint
-
-# Verificar tipos
-make type-check
-```
-
-### 6. Manutenção
+### 4. Manutenção
 ```bash
 # Limpar ambiente (remove volumes)
 make clean
@@ -135,6 +136,9 @@ make clean-sales-db   # Limpar banco do serviço de vendas
 
 # Reconstruir containers
 make rebuild
+
+# Reiniciar serviços
+make restart
 ```
 
 ## Acessando os Serviços
