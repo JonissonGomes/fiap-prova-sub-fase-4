@@ -32,6 +32,77 @@ Este projeto implementa um sistema de gerenciamento de veículos com dois servi�
 ├── docker-compose.yml           # Configuração dos containers
 ├── Makefile                     # Comandos de desenvolvimento
 └── README.md                    # Documentação do projeto
+
+├── frontend/
+├─── public/                    # Arquivos estáticos públicos
+│    ├── index.html            # Template HTML principal
+│    ├── favicon.ico           # Ícone do site
+│    └── manifest.json         # Configuração PWA
+│
+├─── src/                      # Código fonte da aplicação
+│    ├── assets/              # Recursos estáticos
+│    │   ├── images/         # Imagens
+│    │   └── styles/         # Estilos globais
+│    │
+│    ├── components/          # Componentes reutilizáveis
+│    │   ├── common/         # Componentes comuns
+│    │   │   ├── Button/     # Botões personalizados
+│    │   │   ├── Card/       # Cards reutilizáveis
+│    │   │   └── Table/      # Tabelas personalizadas
+│    │   │
+│    │   ├── layout/         # Componentes de layout
+│    │   │   ├── Header/     # Cabeçalho
+│    │   │   ├── Sidebar/    # Menu lateral
+│    │   │   └── Footer/     # Rodapé
+│    │   │
+│    │   └── forms/          # Componentes de formulário
+│    │       ├── Input/      # Campos de entrada
+│    │       ├── Select/     # Seletores
+│    │       └── DatePicker/ # Seletores de data
+│    │
+│    ├── pages/              # Páginas da aplicação
+│    │   ├── Dashboard/      # Página inicial
+│    │   ├── Vehicles/       # Gerenciamento de veículos
+│    │   ├── Sales/          # Gerenciamento de vendas
+│    │   └── Reports/        # Relatórios
+│    │
+│    ├── services/           # Serviços de API
+│    │   ├── api.ts         # Configuração do Axios
+│    │   ├── vehicle.ts     # Serviço de veículos
+│    │   └── sale.ts        # Serviço de vendas
+│    │
+│    ├── types/             # Definições de tipos
+│    │   ├── vehicle.ts     # Tipos de veículos
+│    │   └── sale.ts        # Tipos de vendas
+│    │
+│    ├── utils/             # Funções utilitárias
+│    │   ├── formatters.ts  # Funções de formatação
+│    │   └── validators.ts  # Funções de validação
+│    │
+│    ├── hooks/             # Hooks personalizados
+│    │   ├── useAuth.ts     # Hook de autenticação
+│    │   └── useForm.ts     # Hook de formulário
+│    │
+│    ├── context/           # Contextos React
+│    │   ├── AuthContext.ts # Contexto de autenticação
+│    │   └── ThemeContext.ts # Contexto de tema
+│    │
+│    ├── routes/            # Configuração de rotas
+│    │   └── index.tsx      # Definição das rotas
+│    │
+│    ├── App.tsx            # Componente principal
+│    └── index.tsx          # Ponto de entrada
+│
+├─── tests/                 # Testes automatizados
+│    ├── unit/             # Testes unitários
+│    ├── integration/      # Testes de integração
+│    └── e2e/             # Testes end-to-end
+├─── .env                  # Variáveis de ambiente
+├─── .eslintrc.js         # Configuração do ESLint
+├─── .prettierrc          # Configuração do Prettier
+├─── tsconfig.json        # Configuração do TypeScript
+├─── package.json         # Dependências e scripts
+└─── README.md            # Documentação
 ```
 
 ## Arquitetura
