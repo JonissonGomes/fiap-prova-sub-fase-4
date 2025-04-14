@@ -338,7 +338,7 @@
           "vehicle_id": {
             "type": "string"
           },
-          "customer_cpf": {
+          "buyer_cpf": {
             "type": "string"
           },
           "sale_price": {
@@ -363,12 +363,12 @@
       },
       "SaleCreate": {
         "type": "object",
-        "required": ["vehicle_id", "customer_cpf", "sale_price", "payment_code"],
+        "required": ["vehicle_id", "buyer_cpf", "sale_price", "payment_code"],
         "properties": {
           "vehicle_id": {
             "type": "string"
           },
-          "customer_cpf": {
+          "buyer_cpf": {
             "type": "string"
           },
           "sale_price": {
@@ -385,7 +385,7 @@
           "vehicle_id": {
             "type": "string"
           },
-          "customer_cpf": {
+          "buyer_cpf": {
             "type": "string"
           },
           "sale_price": {
